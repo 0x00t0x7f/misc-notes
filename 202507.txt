@@ -1,0 +1,8 @@
+pandas 聚合
+# 计算各种指标的图层总数
+def _occurrence_number_of_times_total(series):
+    return int(series.sum())
+
+# df["sum"] = df.groupby(["app", "case"])["val"].transform("sum")
+# or df.groupby(["app", "case"]).agg({"val": "sum"})
+# app_case_group_layer_total_df = df.groupby(["app", "case"])["val"].agg(_occurrence_number_of_times_total)
