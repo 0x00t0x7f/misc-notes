@@ -6,3 +6,32 @@ def _occurrence_number_of_times_total(series):
 # df["sum"] = df.groupby(["app", "case"])["val"].transform("sum")
 # or df.groupby(["app", "case"]).agg({"val": "sum"})
 # app_case_group_layer_total_df = df.groupby(["app", "case"])["val"].agg(_occurrence_number_of_times_total)
+
+行动优雅而美丽的蟒蛇：
+1、遵顼PEP8规范
+2、使用 itertools.product 替换多层 for循环嵌套
+3、python3.8+ 海象运算符  := 
+4、联合运算符 合并字典  |   python3.9+
+
+OH性能
+redraw: 
+    是GPU合成图层的一种方式
+    GPU渲染完成后，提交给RSHardware进行合成。合成图层有两种方式：（1）GPU合成；（2）DSS硬件合成
+    1、GPU合成，有两种情况：①统一渲染；②redraw
+    ①统一渲染在RS主线程(UniRender)做，给的频点/性能会强一点。
+    ②redraw在RS子线程(Hardware)做，调度的资源会少一点，而且有个fallback的通路，性能会差一点。
+    fallback通路：传给composer_host进程，composer_host判断后fallback给RS，trace上看就是多了一段binder通信。走统一渲染时，硬件子线程只有一次Binder。
+    composer_host进程：送显服务进程，实际调的是海思这边的送显接口。
+    2、DSS硬件合成（即Hardware Composer，HWC）
+    DSS芯片会根据宽高、压缩格式、存储格式等值，来约束图层是否走DSS。
+    DSS：显示子系统。
+    二、什么情况下会redraw
+    图层有问题/硬件规格不支持合成时会发生redraw。走redraw了表示DSS有图层走不了硬件合成，需要走GPU。
+    海思判断图层能不能走DSS，如果不能走DSS，告诉RS，RS去调用redraw走GPU合成。
+    （这里RS去调用redraw走GPU合成，而不是走统一渲染的GPU合成，因为发生validate的时候统一渲染已经绘制完了）
+
+
+
+
+
+
