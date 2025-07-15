@@ -1,12 +1,18 @@
+# Copyright 2025 by kleex, Inc. All Rights Reserved.
+
 """开头
 模块名要简短，采用小写字母，必要时使用下划线提高可读性。
 包名和模块名类似，包名中不推荐使用下划线
 模块说明balabala..
 """  # 单独成行   对于单行的文档说明 尾部三引号和单行文本在同一行
 
+
 from __future__ import barry_as_FLUFL  # __future__ 导入位于文件顶部 在模块注释和文档字符串之后 在模块的__all__和__version__等之前
 
-__all__ = ['BaseClass']
+__all__ = [
+  'BaseClass',
+  'HTTPServerError'
+]
 __version__ = '0.1 alpha'
 
 import os  # 导入内置模块， 导入位于文件顶部 在模块注释和文档字符串之后 在模块的全局变量和常量之前
@@ -139,6 +145,10 @@ def function4(args1):
 
 # 注释: 求两数乘积（与代码矛盾的注释比没有注释更糟糕，修改代码后需更新注释和代码意图保持一致）
 def add(x, y):
+  """函数注释..
+
+  补充注释..
+  """
   return x + y
 
 xy = Point(1, 2)空格空格# 坐标值   <-- 行内注释：行内注释是和语句在同一行，通常用两个空格和语句分开，行内注释尽量少用，重复啰嗦使人分心，除非这行语句不用行内注释会使阅读者困扰
