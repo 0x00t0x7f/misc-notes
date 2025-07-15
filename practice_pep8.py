@@ -1,9 +1,10 @@
-# Copyright 2025 by kleex, Inc. All Rights Reserved.
+# Copyright 2025 by kleex, All Rights Reserved.
 
 """开头
 模块名要简短，采用小写字母，必要时使用下划线提高可读性。
 包名和模块名类似，包名中不推荐使用下划线
-模块说明balabala..
+
+该模块以示例的方式直观的帮助了解pep8
 """  # 单独成行   对于单行的文档说明 尾部三引号和单行文本在同一行
 
 
@@ -27,6 +28,11 @@ from functools import *  # 避免使用通配符导入
 
 global_a = 1  # 全局变量: 尽量用于模块内部  为了避免使用 from M import * 导入该全局变量 可使用__all__机制或者为全局变量加前置下划线
 CONSTANT_A = 1  # 常量
+
+
+# 命名要"见名知意" 像说明书一样清晰
+user_age = 18
+greeting_message = f"你好，贵宾一位里面请"
 
 
 # 方式1：垂直缩进 左括号对齐, 没有使用垂直缩进时 禁止将参数放在第一行
@@ -143,11 +149,16 @@ def function4(args1):
         return True
 
 
-# 注释: 求两数乘积（与代码矛盾的注释比没有注释更糟糕，修改代码后需更新注释和代码意图保持一致）
-def add(x, y):
-  """函数注释..
+# 错误的注释示例: 求两数乘积（与代码矛盾的注释比没有注释更糟糕，修改代码后需更新注释和代码意图保持一致）
+def add_numbers(x: int, y: int) -> int:
+  """function summary..
 
-  补充注释..
+  Args:
+    x (int): x axis point position.
+    y (int): y axis point position.
+
+  Returns:
+    int: product of two numbers 
   """
   return x + y
 
@@ -159,21 +170,90 @@ _model_global_name = "LLM_MODEL"  # 单前置下划线：弱内部使用标志 �
 model_global_name_ = "LLM_MODEL"  # 单后置下划线：用于避免与python关键词的冲突   def main(class_="ClassName"): pass
 
 
+# 创建列表时 可以考虑使用列表推导式代替循环和条件语句
+multi_set = []
+for x in range(5):
+  multi_set.append(x**2)
+
+# 可以替换为
+multi_set = [x**2 for x in range(5)]
+
+# 如果数据量过大，可以将列表推导式改为生成器表达式写法 它返回的是一个迭代器 能节省内存空间
+multi_set = (x**2 for x i in range(1000000))
+
+
+# 字符串格式化
+# 从python3.6+引入了f-string 直观且性能更好
+name = "bob"
+message = "my name is %s" % name
+
+# 可以使用f-string写法代替
+message = f"my name is {name}"
+
+
+# 建议尽可能使用类型注解 类型注解的使用可以让IDE、linter等代码检查工具更好的理解和检查代码
+def greet(name: str) -> str:
+  return f"hello, {name}"
+
+
+# 函数参数定义的顺序  从左到右顺序依次是 必选参数（位置参数）> 默认参数 > 可变参数 > 命名关键字参数 > 关键字参数
+# function(位置参数, 默认参数, 可变参数, 命名关键字参数, 关键字参数)
+# 尽量避免使用多种的参数组合  参数组合太丰富的话 可能性就会变差 增加了传入实参出错的概率
+# 定义命名的关键字参数在没有可变参数的情况下不要忘了写分隔符*，否则定义的是位置参数
+def register(name, age, gender="男", city="北京", *, email, phone, **kwargs):
+  print(f"name: {name}")
+  print(f"age: {age}")
+  print(f"gender: {gender}")
+  print(f"city: {city}")
+  print(f"email: {email}")
+  print(f"phone: {phone}")
+  print(f"variable parameters args: {args}")
+  print(f"keyword parameters kwargs: {kwargs}")
+
+register("sam", 22, city="深圳", email="sam@163.com", phone="12345678901", other1="关键字参数1", other2="关键字参数2")
+# output:
+# name: sam
+# age: 22
+# gender: 男
+# city: 深圳
+# email: sam@163.com
+# phone: 12345678901
+# keyword parameters kwargs: {'other1': '关键字参数1', 'other2': '关键字参数2'}
+
+
+def register(name, age, gender="男", city="北京", *args, **kwargs):
+  print(f"name: {name}")
+  print(f"age: {age}")
+  print(f"gender: {gender}")
+  print(f"city: {city}")
+  print(f"variable parameters args: {args}")
+  print(f"keyword parameters kwargs: {kwargs}")
+
+register("sam", 22, "女", "深圳", "关键字参数1", "关键字参数2", other1="关键字参数1", other2="关键字参数2")
+# output:
+# name: sam
+# age: 22
+# gender: 女
+# city: 深圳
+# variable parameters args: ('关键字参数1', '关键字参数2')
+# keyword parameters kwargs: {'other1': '关键字参数1', 'other2': '关键字参数2'}
+
+
 class BaseClass(object):
-    """ 类说明
-    balabala..
-    """
+  """ 类说明
+  balabala..
+  """
 
-    def base_method(self):
-        pass
-
-    @classmethod
-    def class_method(cls):
+  def base_method(self):
       pass
 
-    @staticmethod
-    def static_method(args1, args2):
-      pass
+  @classmethod
+  def class_method(cls):
+    pass
+
+  @staticmethod
+  def static_method(args1, args2):
+    pass
 
 
 class HTTPServerError(Exception):
