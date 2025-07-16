@@ -58,6 +58,7 @@ class ProductB(Product):
 
 
 class SimpleFactory:
+
   @staticmethod
   def create_product(product_name):
     if pruduct_name == "a":
@@ -76,3 +77,6 @@ class SimpleFactory:
 - 合成/聚合复用（CARP）：要尽量使用对象组合或者聚合关系，而不是继承关系以达到代码复用目的
 - 迪米特法则（LoD）：系统中的类尽量不要与其他类相互作用 减少类之间的耦合度, 换句话来说就是 一个对象应对其他对象有尽可能少的了解 不需要了解的内容尽量不了解  强调组件之间的松耦合
 - 接口隔离（ISP） 客户端不应依赖它不需要的接口 即一个类对其它类的的依赖应该建立在最小的接口上  强调接口设计的合理性 避免暴露不必要的接口导致类之间的耦合性过高且增加了安全风险
+
+## 参考链接
++ https://www.cnblogs.com/liugp/p/17134320.html#9%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8Fstrategy
