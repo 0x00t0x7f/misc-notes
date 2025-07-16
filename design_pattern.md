@@ -39,6 +39,35 @@
 - 访问者
 - 备忘录
 
+## 设计模式示例
+### 简单工厂模式
+```
+class Product:
+  def operate(self):
+    pass
+
+
+class ProductA(Product):
+  def operate(self):
+    return "product a"
+
+
+class ProductB(Product):
+  def operate(self):
+    return "product b"
+
+
+class SimpleFactory:
+  @staticmethod
+  def create_product(product_name):
+    if pruduct_name == "a":
+      return ProductA()
+    elif product_name == "b":
+      return ProductB()
+    else:
+      raise ValueError
+```
+
 ## 设计模式的7原则
 - 单一职责（SRP）：不要将太多杂乱的功能放到一个类中 要聚焦 高内聚 低耦合 降低类的复杂度 提高代码可读性 可维护性和可重用性
 - 开闭原则（OCP）：对扩展开放 对修改关闭 可以通过抽象化来避免修改已有代码的风险 而从降低软件维护的成本
