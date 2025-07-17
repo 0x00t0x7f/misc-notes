@@ -75,7 +75,147 @@ if __name__ == "__main__":
 
     for product in [product_a, product_b, ...]  # 产品流水线
         product.operate()
+
+    # 如果需要增加新的产品线，不得不修改简单工厂类的代码，破坏了SRP和OCP原则
 ```
+
+### 工厂方法模式
+```
+from abc import ABC, abstractmethod
+
+# 定义抽象产品类
+class Product(ABC):
+
+    @abstractmethod
+    def operate(self):
+        pass
+
+
+class ProductA(Product):
+
+    def operate(self):
+        print("ProductA operate")
+
+
+class ProductB(Product):
+
+    def operate(self):
+        print("ProductB operate")
+
+
+# 定义抽象工厂类
+class Factory(ABC):
+
+    @abstractmethod
+    def factory_method(self) -> Product:
+        pass
+
+    def operation(self):
+        product = self.factory_method()
+        product.operate()
+
+
+# 定义具体工厂类
+class FactoryA(Factory):
+
+    def factory_method(self) -> Product:
+        return ProductA()
+
+
+class FactoryB(Factory):
+
+    def factory_method(self) -> Product:
+        return ProductB()    
+
+
+if __name__ == "__main__":
+    factory_a = FactoryA()
+    factory_b = FactoryB()
+
+    for factory in [factory_a, factory_b]:  # 不同工厂生产不同的产品，将产品的生产与工厂解耦  每个工厂生产一种产品
+        factory.operate()
+```
+### 抽象工厂类
+比如我们要设计一个GUI软件，这个软件有一个文本框和按钮，并需要兼容不同的操作系统，目前需要兼容 mac 和 windows 系统
+```
+class TextBox(ABC):
+
+    @abstractmethod
+    def paint(self):
+        pass
+
+
+class Button(ABC):
+
+    @abstractmethod
+    def paint(self):
+        pass
+
+
+# 具体的控件类
+class WindowsTextBox(TextBox):
+
+    def paint(self):
+        print("painting a windows stype textbox")
+
+
+class WindowsButton(Button):
+
+    def paint(self):
+        print("painting a windows style button")
+
+
+class MacTextBox(TextBox):
+
+    def paint(self):
+        print("painting a mac os style textbox")
+
+
+class MacButton(Button):
+
+    def paint(self):
+        print("painting a mac os style button")
+
+
+# 定义抽象工厂类
+class GUIFactory(ABC):
+
+    @abstractmethod
+    def create_textbox(self) -> TextBox:
+        pass
+
+    @abstractmethod
+    def create_button(self) -> Button:
+        pass
+
+
+class WindowsFactory(GUIFactory):
+
+    def create_textbox(self) -> TextBox:
+        return WindowsTextBox()
+
+    def create_button(self) -> Button:
+        return WindowsButton()
+
+
+class MacFactory(GUIFactory):
+
+    def create_textbox(self) -> TextBox:
+        return MacTextBox()
+
+    def create_button(self) -> Button:
+        return MacButton()
+
+
+def create_gui(factory: GUIFactory):
+    textbox = factory.create_textbox()
+    button = factory.create_button()
+    return textbox, button
+
+
+windows_gui = create_gui(WindowsFactory())
+```
+
 
 ## 设计模式的7原则
 - 单一职责（SRP）：不要将太多杂乱的功能放到一个类中 要聚焦 高内聚 低耦合 降低类的复杂度 提高代码可读性 可维护性和可重用性
