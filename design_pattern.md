@@ -43,30 +43,38 @@
 ### 简单工厂模式
 ```
 class Product:
-  def operate(self):
-    pass
+    def operate(self):
+        pass
 
 
 class ProductA(Product):
-  def operate(self):
-    return "product a"
+    def operate(self):
+        return "product a"
 
 
 class ProductB(Product):
-  def operate(self):
-    return "product b"
+    def operate(self):
+        return "product b"
 
 
 class SimpleFactory:
 
-  @staticmethod
-  def create_product(product_name):
-    if pruduct_name == "a":
-      return ProductA()
-    elif product_name == "b":
-      return ProductB()
-    else:
-      raise ValueError
+    @staticmethod
+    def create_product(product_name):
+        if pruduct_name == "a":
+            return ProductA()
+        elif product_name == "b":
+            return ProductB()
+        else:
+            raise ValueError
+
+
+if __name__ == "__main__":
+    product_a = SimpleFactory.create_product("ProductA")
+    product_b = SimpleFactory.create_product("ProductB")
+
+    for product in [product_a, product_b, ...]  # 产品流水线
+        product.operate()
 ```
 
 ## 设计模式的7原则
