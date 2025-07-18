@@ -80,6 +80,12 @@ if __name__ == "__main__":
 ```
 
 ### 工厂方法模式
+将对象的创建过程委托给子类的方式
+#### 工厂方法的基本原理
++ 定义一个接口或者抽象类表示要创建的对象
++ 创建一个或多个具体的子类 实现工厂接口并实现工厂方法来创建对象
++ 创建一个工厂类 该类包含一个工厂方法 该方法根据需要创建对象并返回该对象
+
 ```
 from abc import ABC, abstractmethod
 
@@ -216,6 +222,7 @@ def create_gui(factory: GUIFactory):
 windows_gui = create_gui(WindowsFactory())
 ```
 ### 建造者模式
+将复杂对象的构建和它的表示分离 使得同样的构建过程可以创建不同的表示
 按照特定顺序组装一个复杂的对象，将对象的构造过程分解为多个步骤，每个步骤由一个具体的构造者完成，客户端可以根据需要使用不同的构造者构建不同对象，不用知道构造过程的细节
 
 #### 建造者模式四个主要角色
@@ -270,7 +277,61 @@ director = Director(doll_builder)
 labubu_doll = director.build_labubu_ragdoll_doll()  # 创建一个拉布布的毛绒玩具对象
 labubu_doll.singsong("拉布, 拉布拉布布, 我是最棒的拉布布..")
 ```
+### 适配器模式
+用于将一个类的接口转换为另一个类的接口 解决两个不兼容的接口之间的兼容问题 使得他们协同工作
+#### 适配器模式的组件组成
++ 源接口（adaptee interface）: 是需要被适配的接口，通常由一个或多个具体类或接口表示
++ 适配器（adapter）： 实现目标接口的对象，并包装一个需要适配的对象，并实现目标接口来实现适配的效果
++ 目标接口（target interface）：客户端代码期望的接口， 通常由抽象类或接口表示
+#### 适配器模式两种实现方式
++ 类适配器模式：通过继承实现适配器
++ 对象适配器模式：通过组合来实现适配器
+```
+# 源接口-需要被适配的类
+class OLDInterface:
 
+    def old_request(self):
+        pass
+
+
+# 目标接口-当前正在使用的类或客户端期望的接口
+class TargetInterface:
+
+    def request(self):
+        pass
+
+
+# 类适配器
+class AdapterCls(OLDInterface, TargetInterface):
+
+    def request(self):
+        self.old_request()  # 调用旧式的old_request方法
+
+
+# 对象适配器
+class AdapterObj(TargetInterface):
+
+    def __init__(self, old_instance):
+        self._old_instance = old_instance
+
+    def request(self):
+        self._old_instance.old_request()  # 调用旧式的old_request方法
+
+
+# 客户端代码
+def client_request(target):
+    target.request()
+
+
+# 类适配器调用示例
+adapter = AdapterCls()
+client_request(adapter)
+
+# 对象适配器调用示例
+old_obj = OLDInterface()
+adapter = AdapterObj(old_obj)
+client_request(adapter)
+```
 
 ## 设计模式的7原则
 - 单一职责（SRP）：不要将太多杂乱的功能放到一个类中 要聚焦 高内聚 低耦合 降低类的复杂度 提高代码可读性 可维护性和可重用性
@@ -282,4 +343,5 @@ labubu_doll.singsong("拉布, 拉布拉布布, 我是最棒的拉布布..")
 - 接口隔离（ISP） 客户端不应依赖它不需要的接口 即一个类对其它类的的依赖应该建立在最小的接口上  强调接口设计的合理性 避免暴露不必要的接口导致类之间的耦合性过高且增加了安全风险
 
 ## 参考链接
++ https://blog.csdn.net/qq_18529581/article/details/149184981?spm=1001.2014.3001.5502
 + https://www.cnblogs.com/liugp/p/17134320.html#9%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8Fstrategy
