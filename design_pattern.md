@@ -135,7 +135,7 @@ if __name__ == "__main__":
     for factory in [factory_a, factory_b]:  # 不同工厂生产不同的产品，将产品的生产与工厂解耦  每个工厂生产一种产品
         factory.operate()
 ```
-### 抽象工厂类
+### 抽象工厂模式
 比如我们要设计一个GUI软件，这个软件有一个文本框和按钮，并需要兼容不同的操作系统，目前需要兼容 mac 和 windows 系统
 ```
 class TextBox(ABC):
@@ -214,6 +214,61 @@ def create_gui(factory: GUIFactory):
 
 
 windows_gui = create_gui(WindowsFactory())
+```
+### 建造者模式
+按照特定顺序组装一个复杂的对象，将对象的构造过程分解为多个步骤，每个步骤由一个具体的构造者完成，客户端可以根据需要使用不同的构造者构建不同对象，不用知道构造过程的细节
+
+#### 建造者模式四个主要角色
++ 产品（表示要构建的复杂对象）
++ 建造者（builder）: 定义创建产品的抽象接口，包含构造产品各个零件的方法
++ 具体建造者类：实现 builder接口，完成复杂对象各个零件的实际构造工作
++ 指挥者（director）：负责管理（builder），按照顺序调用 builder中方法按步骤构建产品
+
+#### 建造者模式应用场景
++ 构建复杂对象， 且构建过程中步骤固定但顺序不同活部分步骤凯旋，适合用建造者模式
++ 隔离复杂对象的创建和使用，使用建造者模式让用户专注于使用对象，不需要关心对象的构造过程
++ 多种配置对象，当一个类实例有不同的配置方式，建造者模式可以帮助简化对象的创建
+
+```
+class Doll:
+    def __init__(self):
+        self.name = None
+        # 其他属性省略..
+
+    def singsong(self, lyrics):
+        print(f"我是, {self.name}, 唱歌给你听,~ {lyrics}..")
+
+
+class DollBuilder(ABC):
+
+    @abstractmethod
+    def set_name(self, name):
+        pass
+
+
+class RagDollBuilder(DollBuilder):
+
+    def __init__(self):
+        self.doll = Doll()
+
+    def set_name(self, name):
+        self.doll.name = name
+
+
+class Director:
+
+    def __init__(self, builder):
+        self.builder = builder
+
+    def build_labubu_ragdoll_doll(self):
+        self.builder.set_name("拉布布")
+        return self.builder.doll
+
+
+doll_builder = RagDollBuilder()
+director = Director(doll_builder)
+labubu_doll = director.build_labubu_ragdoll_doll()  # 创建一个拉布布的毛绒玩具对象
+labubu_doll.singsong("拉布, 拉布拉布布, 我是最棒的拉布布..")
 ```
 
 
