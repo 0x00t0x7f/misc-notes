@@ -342,6 +342,12 @@ client_request(adapter)
 + 实例化具体桥梁类 并将实现类对象作为参数传递给具体桥梁类的构造函数
 + 调用具体桥梁类的方法：桥梁类将委托给实现类的方法来完成具体的操作
 
+#### 桥接模式的四种角色
++ 抽象类： 该类包含一个对实现类角色的引用， 抽象角色中的方法一般需要实现角色实现。
++ 修正对象：抽象类的具体实现类
++ 实现类：提供给抽象类使用，一般为接口或者抽象类
++ 实现类的具体实现
+
 #### 桥接模式python示例
 比如我们平时点外卖，平台给派单，骑实不用关心他送的是什么外卖，他只需要负责把外卖按时送到顾客手里就算完成了任务。 在这个例子中，有几个角色： 商家、外卖骑手、顾客。对于商家来说，并不关心哪个骑手配送他家的外卖，商家只需要打包好外卖，等骑手过来领取； 商家和顾客之间是通过外卖小哥间接接触的，那我们可以将这个逻辑关系抽象出来。 我们我们暂时只关注商家和骑手，不用关注顾客订餐的细节。
 
@@ -457,6 +463,58 @@ JD-商家[霸王奶茶] 委托:
 小马哥：（笑嘻嘻）“嘿嘿，我这不是想支持你嘛！对了，奶茶还热乎着，你这JD速度果然名不虚传！”
 东子哥：（无奈地摇摇头有点生气）“你这人啊，真是让人无语。不过话说回来，你要是以后点奶茶，我可不给你送了
 小马哥：（举起奶茶，假装认真）“放心放心，我以后再也不点奶茶了！（偷偷在心里笑）”
+
+### 组合模式
+#### 组合模式的三种角色
++ 抽象组件： 定义组合中所有对象共有的方法和行为以及属性等
++ 叶子组件：组合中的单个对象
++ 容器组件：容器组件可以包含其他容器组件和叶子组件
+```
+class FileComp(metaclass=ABCMeta):
+
+    @abstractmethod
+    def list(self):
+        pass
+
+
+class File(FileComp):
+
+    def __init__(self, name):
+        self.name = name
+
+    def list(self):
+        print(self.name)
+
+
+class Folder(FileComp):
+
+    def __init__(self, name):
+        self.name = name
+        self.children = []
+
+    def add(self, comp):
+        self.children.append(comp)
+
+    def list(self):
+        print(self.name)
+        for item in self.children:
+            item.list()
+
+
+if __name__ == "__main__":
+    root = Folder("root")
+    folder1 = Folder("folder1")
+    folder2 = Folder("folder2")
+    file1 = File("file1")
+    file2 = File("file2")
+
+    root.add(folder1)
+    root.add(folder2)
+    root.add(file1)
+    folder2.add(file2)
+
+    root.list() 
+```
 
 ### 其他设计模式 未完待续, 点赞关注不迷路!
 
