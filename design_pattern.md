@@ -362,7 +362,7 @@ class DeliveryMan(ABC):
 
 
 class MeituanDeliveryMan(DeliveryMan):
-    platform = "美团"
+    platform = "Meituan"
 
     def send(self, food, customer):
         print(f"\t[{self.platform}]-外卖骑手-({self.name})正在配送: (客户-{customer}) 点的 {food}.")
@@ -383,8 +383,8 @@ class Business(ABC):
 
 
 class MeituanBusiness(Business):
-    """ 美团商家"""
-    platform = "美团"
+    """ 某团商家"""
+    platform = "某团"
 
     def delivery(self, food: str, deliveryman: DeliveryMan,  customer: str):
         print(f"{self.platform}-商家[{self.name}] 委托:")
@@ -396,8 +396,8 @@ if __name__ == "__main__":
     delivery1 = MeituanDeliveryMan("张全蛋")
     business1.delivery("伯牙琴弦", delivery1, "小马哥")
 
-美团-商家[霸王奶茶] 委托:
-	[美团]-外卖骑手-(张全蛋)正在配送: (客户-小马哥) 点的 伯牙琴弦.
+某团-商家[霸王奶茶] 委托:
+	[某团]-外卖骑手-(张全蛋)正在配送: (客户-小马哥) 点的 伯牙琴弦.
 ```
 小马哥在一个夏日的午后在连线投资部开会前点了一杯奶茶
 美团将这单派送了附近的骑手张全蛋
@@ -408,37 +408,45 @@ if __name__ == "__main__":
 小马哥：（无奈）行了，你这服务态度倒是不错，就是效率有点感人。这奶茶都凉了，我这人最讲究“趁热喝”，你这是让我喝“冷知识”啊
 张全蛋：（尴尬）马总，我下次一定快点，保证让您喝到热乎的！
 
-小马哥喝着奶茶突然冒出了一个大胆的想法.. 给合作伙伴JD的东哥拨通了电话..
-小马哥：（拿起电话，语气兴奋）喂，老刘啊，你JD物流这么强，为什么不搞外卖？现在外卖市场这么火，你们完全有条件啊！我继续追加投资！
-东子哥：（笑着接电话）老马啊，你这主意倒是不错，我这几天正在琢磨这件事呢，不过你得答应我一个条件——我要是搞外卖，不许点奶茶了哦！
-小马哥：（愣了一下，随即大笑）哈哈哈，行啊，没问题！不过你JD搞外卖，我可就不用点外卖了，直接喝你JD的奶茶就行！（笑）
-东子哥：（瞬间黑脸）老马，你这样开涮我不合适吧，我京东搞外卖，你要是敢点奶茶，我就让你知道什么是“京东速度”！
+小马哥喝着奶茶突然冒出了一个大胆的想法.. 给战略合作伙伴JD的东哥拨通了电话..
+小马哥：（拿起电话，语气兴奋）喂，老刘啊，你JD物流这么强，为什么不搞外卖？现在外卖市场这么火，你们完全有条件啊！你要是搞，我继续追加对JD的投资！
+东子哥：（笑着接电话）老马啊，你这主意倒是不错，我这几天正在琢磨这件事呢，不过你得答应我一个条件——我要是搞外卖，不许点我们JD的奶茶哦！
+小马哥：（愣了一下，随即大笑）哈哈哈，行啊，没问题！不过你JD搞外卖，我可就不点某团的外卖了，直接喝你JD的奶茶（笑）
+东子哥：（瞬间黑脸）老马，你这样开涮我不合适吧，我JD搞外卖，你要是敢点奶茶，我就让你知道什么是“JD速度”！
 
 2 month later.. 
-用我们的桥接模式可以很方便的扩充JD商家，京东外卖上线了..
+用我们的桥接模式可以很方便的扩充JD商家，招募了骑手，很快JD外卖平台上线了..
 ##### 商家&外卖骑手的UML类图如下
 
 ```
 class JDBusiness(Business):
     """ JD商家"""
-    platform = "京东"
+    platform = "JD"
 
     def delivery(self, food: str, deliveryman: DeliveryMan,  customer: str):
         print(f"{self.platform}-商家[{self.name}] 委托:")
         deliveryman.send(food, customer)
 
+
+class JDDeliveryMan(DeliveryMan):
+    platform = "JD"
+
+    def send(self, food, customer):
+        print(f"\t[{self.platform}]-外卖骑手-({self.name})正在配送: (客户-{customer}) 点的 {food}.")
+
+
 if __name__ == "__main__":
-    # 小马哥又偷偷的点了一杯奶茶
+    # 小马哥又偷偷的点了一杯JD的奶茶，想尝尝JD的奶茶是什么味道..
     business2 = MeituanBusiness("霸王奶茶")
     delivery2 = MeituanDeliveryMan("东子哥")
     business2.delivery("伯牙琴弦", delivery2, "小马哥")
 
-京东-商家[霸王奶茶] 委托:
-	[京东]-外卖骑手-(东子哥)正在配送: (客户-小马哥) 点的 伯牙琴弦.
+JD-商家[霸王奶茶] 委托:
+	[JD]-外卖骑手-(东子哥)正在配送: (客户-小马哥) 点的 伯牙琴弦.
 ```
 
 小马哥：（坐在办公室，看着手机，坏笑）“老刘啊，你JD外卖今天第一天，之前MT有点慢，我得亲自测一下JD的速度！
-东子哥：兄弟们，今天是我们JD外卖第一天，我要和兄弟们一起送外卖
+东子哥：对着新招募的骑手说，今天是我们JD外卖第一天，我要和兄弟们一起送外卖
 
 （叮咚一声，奶茶到了。小马哥打开门，看到送奶茶的是东哥本人，愣了一下。）
 小马哥：（假装惊讶）“哎哟，这不是老刘吗？你亲自送奶茶啊？这服务也太到位了吧！”
