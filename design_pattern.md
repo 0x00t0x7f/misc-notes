@@ -663,8 +663,97 @@ class TicketProxy(Ticket):
             self.server.buys(start, end, money, seat)
         else:
             print("请先登录系统")
+
+# 客户端
+ticketserver = TicketServer()
+ticketproxy = TicketProxy(ticketserver)
+ticketproxy.buy("北京", "上海", 550, "二等座13F")
 ```
 比如我们购票可以通过代理软件购买，可以设定座位偏好等配置，代理软件会轮询通过官方购票服务进行购票。
+
+### 责任链模式
+将请求的发送者和接收者解耦，使得多个对象都可以参与到处理请求的过程中。每个处理器对象都包含下一个处理器对象的引用，环环相扣，当有请求产生时，沿着这条请求链传递，直到有对象处理它。
+#### 责任链优缺点
+优点：
++ 降低对象间的耦合度
++ 增强了系统的可扩展性，也满足开闭原则
++ 可以动态的调整链内对象次序，可以动态的增加和删除链内对象
++ 每个链内对象只需保存一个指向后面节点的引用，无需保存所有链内对象的引用
++ 明确分工，每个处理类只处理自己关心的请求，不满足的请求传递给下一个对象即可，符合类的单一职责原则
+
+#### 责任链的角色
++ 处理类接口： 包含处理请求的方法和对下一个处理器对象的引用
++ 具体处理器类：实现处理器接口
++ 客戶端：创建处理器对象链，并将请求发送给链得第一个处理器对象
+
+缺点：
++ 不能保证每个请求都会被处理，某个请求可能从链首传递到链尾都得不到处理
++ 对于长责任链，可能会影响系统性能，也可能导致复杂度上升，系统维护难度加大
+```
+# 比如鼠标事件，计算机的外设包含鼠标、键盘等输入设备在和计算机交互时的事件处理模拟
+
+# 事件处理类接口
+class Event:
+
+    def __init__(self):
+        self._next_handler = None
+
+    def set_next(self, handler):
+        self._next_handler = handler
+        return handler
+
+    def handle(self, request):
+        if self._next_handler:
+            return self._next_handler.handle(request)
+        return None
+
+
+# 具体事件处理类
+class MouseClickEvent(Event):
+    name = "鼠标点击事件"
+
+    def handle(self, request):
+        if request == "click":
+            return "handle click event"
+        else:
+            return super().handle(request)
+
+
+# 具体事件处理类
+class MouseMoveEvent(Event):
+    name = "鼠标移动事件"
+
+    def handle(self, request):
+        if request == "move":
+            return "handle move event"
+        else:
+            return super().handle(request)
+
+
+# 具体事件处理类
+class KeyBoardEvent(Event):
+    name = "键盘按下事件"
+
+    def handle(self, request):
+        if request == "space":
+            return "handle space event"
+        else:
+            return super().handle(request)
+
+# 客户端
+event1 = MouseClickEvent()
+event2 = MouseMoveEvent()
+event3 = KeyBoardEvent()
+event1.set_next(event2).set_next(event3)
+requests = ["click", "move", "space", "enter"]
+
+for request in requests:
+    resp = event1.handle(request)
+    if resp:
+        print(resp)
+    else:
+        print(f"无法识别该事件:{request}")
+```
 
 ### 其他设计模式 未完待续, 点赞关注不迷路!
 
