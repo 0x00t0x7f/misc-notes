@@ -681,14 +681,15 @@ ticketproxy.buy("北京", "上海", 550, "二等座13F")
 + 每个链内对象只需保存一个指向后面节点的引用，无需保存所有链内对象的引用
 + 明确分工，每个处理类只处理自己关心的请求，不满足的请求传递给下一个对象即可，符合类的单一职责原则
 
+缺点：
++ 不能保证每个请求都会被处理，某个请求可能从链首传递到链尾都得不到处理
++ 对于长责任链，可能会影响系统性能，也可能导致复杂度上升，系统维护难度加大
+
 #### 责任链的角色
 + 处理类接口： 包含处理请求的方法和对下一个处理器对象的引用
 + 具体处理器类：实现处理器接口
 + 客戶端：创建处理器对象链，并将请求发送给链得第一个处理器对象
 
-缺点：
-+ 不能保证每个请求都会被处理，某个请求可能从链首传递到链尾都得不到处理
-+ 对于长责任链，可能会影响系统性能，也可能导致复杂度上升，系统维护难度加大
 ```
 # 比如鼠标事件，计算机的外设包含鼠标、键盘等输入设备在和计算机交互时的事件处理模拟
 
@@ -708,7 +709,7 @@ class Event:
         return None
 
 
-# 具体事件处理类
+# 具体事件处理类1
 class MouseClickEvent(Event):
     name = "鼠标点击事件"
 
@@ -719,7 +720,7 @@ class MouseClickEvent(Event):
             return super().handle(request)
 
 
-# 具体事件处理类
+# 具体事件处理类2
 class MouseMoveEvent(Event):
     name = "鼠标移动事件"
 
@@ -730,7 +731,7 @@ class MouseMoveEvent(Event):
             return super().handle(request)
 
 
-# 具体事件处理类
+# 具体事件处理类3
 class KeyBoardEvent(Event):
     name = "键盘按下事件"
 
@@ -754,7 +755,98 @@ for request in requests:
     else:
         print(f"无法识别该事件:{request}")
 ```
+县水利局的办公室里，一股烟味弥漫。股长周明远手里捏着一份河道清淤工程的审批表，眉头紧锁。这工程预算报了五百万，可实际成本，他心里门儿清，三百万撑死了。​
+办事员小孙凑过来，低声说：“周股长，这工程老板可是张总的远房亲戚，您看这审批……”​
+周明远狠狠吸了口烟，吐出个烟圈：“你小子懂什么？这表我要是批了，出了事谁担着？往上递。” 说着，就把审批表往副局长刘志强桌上送。​
+刘志强拿起审批表，手指在数字上敲了敲，似笑非笑地说：“明远啊，你这是把难题给我送来了。张总前阵子还请咱们局里人吃饭，这面子不能不给。但这数儿，也太扎眼了。我看，还是让局长定夺。”​
+局长王建军正在打电话，挂了电话，拿起审批表看了看，脸色沉了下来：“你们俩，一个推一个。这工程是县里的重点项目，出了岔子谁都跑不了。周股长，你去核实一下实际工程量，看看有没有虚报；志强，你去查查张总的公司资质，有没有问题；小孙，你把近几年类似工程的预算整理出来，做个对比。”​
+周明远心里咯噔一下，他知道，这核实工程量就是走个过场，张总早就打点好了下面的人。刘志强也明白，查公司资质不过是掩人耳目，张总的关系网，他可不敢得罪。小孙更是清楚，整理预算就是做做样子，最后还得按上面的意思来。​
+这就像一条绳上的蚂蚱，谁也跑不掉。周明远要是不把审批表往上递，自己独吞好处，万一被查，就是死路一条。刘志强要是不顺着来，张总那边不好交代，以后在局里也不好混。王建军要是把事情捅出去，整个水利局都会受牵连，他这个局长也别想当了。
+```
+# 上面的虚构故事用下面的责任链模式模拟其如何运作
+# 审批事件处理类接口
+class Event:
 
+    def __init__(self):
+        self._next_handler = None
+
+    def set_next(self, handler):
+        self._next_handler = handler
+        return handler
+
+    def handle(self, request):
+        if self._next_handler:
+            return self._next_handler.handle(request)
+        return None
+
+
+# 具体事件处理类1
+class Event1(Event):
+    name = "股长审批环节"
+
+    def handle(self, request):
+        if request.event_flow == "股长审批止":
+            # 扣40%  直接通过审批
+            request.money -= request.money * 0.4
+            request.result = "pass"
+            return request 
+        else:
+            # 自己扣5%  交给上一级处理
+            request.money -= request.money * 0.05
+            return super().handle(request)
+
+
+# 具体事件处理类2
+class Event2(Event):
+    name = "副局长审批环节"
+
+    def handle(self, request):
+        if request.event_flow == "副局审批止":
+            # 扣35%  直接通过审批
+            request.money -= request.money * 0.35
+            request.result = "pass"
+            return request
+        else:
+            # 自己扣10%  交给上一级处理
+            request.money -= request.money * 0.1
+            return super().handle(request)
+
+
+# 具体事件处理类3
+class Event3(Event):
+    name = "局长审批环节"
+
+    def handle(self, request):
+        if request.event_flow == "局长审批止":
+            # 扣25%  直接通过审批
+            request.money -= request.money * 0.25
+            request.result = "pass"
+            return request
+        else:
+            # 自己扣15%  交给上一级处理
+            request.money -= request.money * 0.15
+            return super().handle(request)
+
+# 客户端
+event1 = Event1()
+event2 = Event2()
+event3 = Event3()
+event1.set_next(event2).set_next(event3)
+
+
+class Request:
+    def __init__(self, event_flow, money, result=None):
+        self.event_flow = event_flow
+        self.money = money
+        self.result = result
+
+
+# 河道清淤工程的审批申请, 该项目需要局长审批才能通过，工程总预算500w
+request = Request("局长审批止", 5000000)
+
+# 通过层层克扣后，实际用于工程实施的项目款只剩下300w
+resp = event1.handle(request)
+```
 ### 其他设计模式 未完待续, 点赞关注不迷路!
 
 ## 设计模式的7原则
