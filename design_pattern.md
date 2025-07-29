@@ -853,6 +853,71 @@ request = Request("局长审批止", 5000000)
 # 通过层层克扣后，实际用于工程实施的项目款只剩下300w
 resp = event1.handle(request)
 ```
+
+### 中介者模式 
+用于多个对象之间的交互解耦，使得对象间通信更加灵活和简单
+#### 中介者的角色
++ 抽象中介者
++ 具体中介者： 实现抽象中介者接口，负责协调各个通信对象间的交互关系
++ 抽象同事类：定义各个同事对象的接口，包含一个指向中介者对象的引用，以便与中介者通信
++ 具体同事类：实现了抽象同事类的接口，负责实现各自的行为，和中介者对象进行通信，通常会在中介者中注册自己
+#### 中介者模式的优缺点
+优点：
++ 降低耦合度： 同事间不在互相通信，而是通过中介者
++ 集中管理： 所有的交互逻辑都集中一个地方，易于维护和管理扩展
+
+缺点：
++ 增加中介者的复杂度： 由于所有交互逻辑都集中在中介者中，可能导致中介者的代码变得越来越复杂
++ 导致系统瓶颈： 中介者可能成为系统瓶颈
+
+#### 应用场景
++ gui组件协作： 中介者模式可以用于在不同的gui控件间提供协调和管理
++ 聊天应用
++ 工作流管理：不同任务或节点之间的交互可以通过中介者进行管理
+```
+class User:
+
+    def __init__(self, name):
+        self.name = name
+        self.mediator = None
+
+    def send_msg(self, msg):
+        self.mediator.send_msg(msg, self)
+
+    def receive_msg(self, msg):
+        print(f"{self.name} received msg: {msg}")
+
+
+class ChatRoom:
+
+    def __init__(self):
+        self.users = []
+
+    def add_user(self, user):
+        self.users.append(user)
+        user.mediator = self
+
+    def send_msg(self, msg, sender):
+        for user in self.users:
+            if user != sender:
+                user.receive_msg(msg)
+
+
+chat_room = ChatRoom()
+
+bob = User("Bob")
+sam = User("Sam")
+peter = User("Peter")
+
+chat_room.add_user(bob)
+chat_room.add_user(sam)
+chat_room.add_user(peter)
+
+bob.send_msg("Hello, every one!")
+sam.send_msg("Hi, Bob!")
+peter.send_msg("Hello, I'm Peter!")
+```
+
 ### 其他设计模式 未完待续, 点赞关注不迷路!
 
 ## 设计模式的7原则
