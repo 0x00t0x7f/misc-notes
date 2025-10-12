@@ -49,6 +49,8 @@
 - 积分调整、等级调整
 
 ### 推广
+<img width="413" height="479" alt="image" src="https://github.com/user-attachments/assets/3bc549d4-af94-4317-80e8-efa0f99cae4c" />
+
 
 ### 意见收集
 
