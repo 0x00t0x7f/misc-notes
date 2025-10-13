@@ -65,10 +65,16 @@ if condition1 and condition2 and condition3 and condition4 and \
     condition5 and condition6 and condition7:
     pass
 
-# 可改为 换行后额外添加缩进（换行）
+# 可改为 换行后额外添加缩进（换行），而且建议将操作符放在新行语句的最前面
 if (condition1 and condition2 and condition3 and condition4 
       and condition5 and condition6 and condition7):
     do_something()
+
+# 建议：当换行的语句是条件语句时，新续行不要和语句块的缩进一样 PEP8中会对此警告，见PEP8: E125，如上两个if条件语句
+# 应该适当再缩进一格
+if condition1 and condition2 and condition3 and condition4 and \
+        condition5 and condition6 and condition7:
+    pass
 
 
 mlist = [
@@ -76,7 +82,7 @@ mlist = [
     4, 5, 6,
     ]
 
-# 或者（推荐）
+# 或者（推荐） 单独成行的括号和另一侧括号所在行缩进一致
 mlist = [
     1, 2, 3,
     4, 5, 6,
@@ -89,12 +95,19 @@ result = function1(
     "arg3", "arg4",
     )
 
-
 # 或者（推荐）
 result = function1(
     "args1", "arg2",
     "arg3", "arg4",
 )
+
+# 复杂的推导表达式每段应该独立成行
+generator = [
+  x * y
+  for x in range(5)
+  for y in range(10)
+  if x > 0 and y > 0
+]
 
 
 # 限制行最大行宽不超过80个字符， pycharm中标称线最大是74个字符(和相关默认配置有关系)  现代宽屏显示器下可以适当提高到80~120之间，建议和团队的约定一致
