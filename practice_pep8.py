@@ -1,10 +1,14 @@
-# Copyright 2025 by kleex, All Rights Reserved.
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# Copyright 2025 by kleex, All Rights Reserved.  # 版权许可信息建议在 shebang和文件编码声明之后，文档字符串之前
 
-"""开头
+""" 模块开头模块的简介
+
+模块的详细介绍：该模块以直观的示例帮助读者了解pep8规范
+
+模块文档字符串应无缩进
 模块名要简短，采用小写字母，必要时使用下划线提高可读性。
 包名和模块名类似，包名中不推荐使用下划线
-
-该模块以直观的示例帮助读者了解pep8规范
 """  # 单独成行   对于单行的文档说明 尾部三引号和单行文本在同一行
 
 
@@ -18,21 +22,30 @@ __version__ = '0.1 alpha'
 
 import os  # 导入内置模块， 导入位于文件顶部 在模块注释和文档字符串之后 在模块的全局变量和常量之前
 import sys
-# 不推荐 import os, sys
+# 不推荐 import os, sys  一行不能导入多个模块、库
 
+from functools import *  # 避免使用通配符导入
 import requests  # 导入三方模块
 
+sys.path.insert(0, "/home/modules")  # 改变环境路径需要进行导入优先级调整时，可以放在导入自定义模块之前或者被调整模块之前
 from selfdefinedpackage import selfdefinedmodule  # 本地导入 导入自定义模块 推荐使用绝对路径导入 在绝对路径比较长时可使用相对路径
-from functools import *  # 避免使用通配符导入
 
 
-global_a = 1  # 全局变量: 尽量用于模块内部  为了避免使用 from M import * 导入该全局变量 可使用__all__机制或者为全局变量加前置下划线
-CONSTANT_A = 1  # 常量
+global_var = [1, 2, 3]  # 全局变量: 尽量用于模块内部  为了避免使用 from M import * 导入该全局变量 可使用__all__机制或者为全局变量加前置下划线
+GLOBAL_CONST = 1  # 常量（全局范围内的不可变数据类型应视为常量）
+
+
+def function_name():
+    LOCAL_VAR = 1  # invalid  函数内、局部变量以及可变类型应该视作变量
 
 
 # 命名要"见名知意" 像说明书一样清晰
 user_age = 18
 greeting_message = f"你好，贵宾一位里面请"
+
+# 函数命名推荐采用 定语+动词+中间体+名词 的方式命名，且能够准确表达含义的前提下尽可能简短易懂
+# 判断被命名的对象，职责是否单一，不单一可以拆分命名
+# 如果实在难以有准确的命名，可以添加注释
 
 
 # 方式1：垂直缩进 左括号对齐, 没有使用垂直缩进时 禁止将参数放在第一行
@@ -84,7 +97,7 @@ result = function1(
 )
 
 
-# 限制行最大行宽不超过80个字符， pycharm中标称线最大是74个字符(和相关默认配置有关系)  现代宽屏显示器下可以适当提高到80~100之间，建议和团队的约定一致
+# 限制行最大行宽不超过80个字符， pycharm中标称线最大是74个字符(和相关默认配置有关系)  现代宽屏显示器下可以适当提高到80~120之间，建议和团队的约定一致
 # line>:零一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零一二三|四五六七八九
 
 
@@ -164,6 +177,10 @@ def add_numbers(x: int, y: int) -> int:
 
 xy = Point(1, 2)空格空格# 坐标值   <-- 行内注释：行内注释是和语句在同一行，通常用两个空格和语句分开，行内注释尽量少用，重复啰嗦使人分心，除非这行语句不用行内注释会使阅读者困扰
 
+# 反例: 上线或者交付的代码中不应该包含todo、fixme等注释
+config = read_file(config_file_path)  # todo 
+config = read_file(config_file_path)  # fixme
+
 
 # 首尾有下划线的情况
 _model_global_name = "LLM_MODEL"  # 单前置下划线：弱内部使用标志 如 from M import * 不会导入下划线开头的对象
@@ -239,9 +256,24 @@ register("sam", 22, "女", "深圳", "关键字参数1", "关键字参数2", oth
 # keyword parameters kwargs: {'other1': '关键字参数1', 'other2': '关键字参数2'}
 
 
+class Demo:
+    """ 正例"""
+
+    def __init__(self):
+        self.publib_name = 0  # 公有属性
+        self._protect_name = 0  # 保护属性
+        self.__private_name = 0  # 私有属性
+
+    def public_method(self):
+        pass
+
+    def __private_method(self):
+        pass
+
+
 class BaseClass(object):
   """ 类说明
-  balabala..
+  balabala..类的文档字符串..
   """
 
   def base_method(self):
