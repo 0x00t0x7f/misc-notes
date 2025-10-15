@@ -41,6 +41,8 @@
 - 诊断记录
 - 押题记录
 - 模拟面试记录
+<img width="1214" height="793" alt="1760540599295" src="https://github.com/user-attachments/assets/ad12c658-adac-4ed3-bc5c-1d7081e7b495" />
+
 
 ### 充值升级（realtime）
 - 付款吗（企业对公收款账号）
