@@ -40,9 +40,10 @@
 
 ## 业务
 ### 仪表面板
-- 找工作（求职次数， 有效搜索次数）
+- 找工作次数（求职次数， 有效搜索次数）
 - 诊断记录
 - 押题记录
+- 职场动态（json定期更新）
 - 模拟面试记录
 <img width="1214" height="793" alt="1760540599295" src="https://github.com/user-attachments/assets/ad12c658-adac-4ed3-bc5c-1d7081e7b495" />
 
