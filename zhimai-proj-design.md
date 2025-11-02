@@ -144,6 +144,6 @@
 + [ ] 求职广播，在地图上画圈并根据简历自动匹配合适的企业岗位，自动生成匹配列表，一键发送
 
 ## Tools
-+ diagrams.net（快速草图、轻量级）
-+ diagrams（开发者、python、版本化管理）
++ diagrams.net（快速草图、轻量级、原draw.io）
++ diagrams（开发者、python库、版本化管理）
 + Archi（开源企业级）
