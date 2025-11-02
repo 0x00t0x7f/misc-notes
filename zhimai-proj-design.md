@@ -138,6 +138,10 @@
   - 用户活跃-平均时长
   - 转化率趋势-指标计算规则
   - 核心功能每次会话时长
+     
+## 设计
+<img width="800" height="611" alt="image" src="https://github.com/user-attachments/assets/eb294baf-8b8c-4a94-949f-328140a71448" />
+
 
 ## 后续规划
 + [ ] 职位雷达，根据地理位置扫描周围的企业招聘信息（需购买地理信息数据库）
