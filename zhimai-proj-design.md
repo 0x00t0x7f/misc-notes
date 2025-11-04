@@ -213,6 +213,9 @@ F-->G
 ## 设计
 <img width="800" height="611" alt="image" src="https://github.com/user-attachments/assets/eb294baf-8b8c-4a94-949f-328140a71448" />
 
+**当前界面**  
+<img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
+<img width="1197" height="769" alt="image" src="https://github.com/user-attachments/assets/ac7818e1-b0e1-4bec-bb24-b22808150292" />
 
 ## 后续规划
 + [ ] 职位雷达，根据地理位置扫描周围的企业招聘信息（需购买地理信息数据库）
