@@ -213,6 +213,22 @@ F-->G
 ## 设计
 <img width="800" height="611" alt="image" src="https://github.com/user-attachments/assets/eb294baf-8b8c-4a94-949f-328140a71448" />
 
+### 系统视图
+```python
+with Diagram("职麦AI系统", show=False, filename="context"):
+    user = Person("用户")
+    pay = System("支付系统", description="支付SDK", external=True)
+
+    with SystemBoundary("main system"):
+        auth = System("认证/鉴权中心")
+        admin = System("管理后台")
+        web = System("web服务")
+
+    user >> Relationship("访问") >> admin
+    user >> Relationship("访问") >> web >> Relationship("认证") >> auth >> Relationship("") >> web
+    web >> Relationship("支付") >> pay >> Relationship("支付回调") >> web
+```
+
 **当前界面**  
 <img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
 <img width="1197" height="769" alt="image" src="https://github.com/user-attachments/assets/ac7818e1-b0e1-4bec-bb24-b22808150292" />
