@@ -382,6 +382,8 @@ Member --> ACL : 鉴权
 Auth --> Notify : 发送验证码
 @enduml
 ```
+<img width="387" height="522" alt="image" src="https://github.com/user-attachments/assets/1ba7c778-70a0-46c1-8578-7ffa211d4e25" />
+
 
 **【范围】**  
 单个容器
@@ -423,6 +425,9 @@ interface UserRepository extends JpaRepository<User, Long> {
 }
 @enduml
 ```
+<img width="592" height="329" alt="image" src="https://github.com/user-attachments/assets/74adb463-9547-4620-a98f-2095dd320b26" />
+
+
 **【范围】**  
 单个组件
 
