@@ -545,6 +545,7 @@ Container(alias, "label", "technology", "description")
 + https://www.cnblogs.com/wzzkaifa/p/19054361
 + https://www.cnblogs.com/jimoliunian/p/18777560
 + https://www.jianshu.com/p/c90203659433
++ https://blog.csdn.net/csdn_tom_168/article/details/148869213
 
 ### 4A架构
 4A架构是业务架构、应用架构、数据架构和技术架构的统称。
