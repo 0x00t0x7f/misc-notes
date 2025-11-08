@@ -228,6 +228,7 @@ with Diagram("职麦AI系统", show=False, filename="context"):
     user >> Relationship("访问") >> web >> Relationship("认证") >> auth >> Relationship("") >> web
     web >> Relationship("支付") >> pay >> Relationship("支付回调") >> web
 ```
+<img width="904" height="706" alt="image" src="https://github.com/user-attachments/assets/b95d4428-2fa4-4372-ac41-98cf2c303998" />
 
 **当前界面**  
 <img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
