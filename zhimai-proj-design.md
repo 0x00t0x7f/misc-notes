@@ -213,22 +213,68 @@ F-->G
 ## 设计
 <img width="800" height="611" alt="image" src="https://github.com/user-attachments/assets/eb294baf-8b8c-4a94-949f-328140a71448" />
 
-### 系统视图
+### 系统架构
 ```python
-with Diagram("职麦AI系统", show=False, filename="context"):
+with Diagram("职麦AI", show=False, filename="context"):
     user = Person("用户")
     pay = System("支付系统", description="支付SDK", external=True)
+    email = System("邮件服务", description="发送注册、通知邮件", external=True)
 
     with SystemBoundary("main system"):
-        auth = System("认证/鉴权中心")
         admin = System("管理后台")
         web = System("web服务")
 
-    user >> Relationship("访问") >> admin
-    user >> Relationship("访问") >> web >> Relationship("认证") >> auth >> Relationship("") >> web
-    web >> Relationship("支付") >> pay >> Relationship("支付回调") >> web
+    user >> Relationship("直接访问") >> web
+    user >> Relationship("安全代理访问") >> admin
+    web >> Relationship("发送邮件") >> email >> Relationship("投递邮件") >> user
+    web >> Relationship("支付、回调") << pay
 ```
-<img width="904" height="706" alt="image" src="https://github.com/user-attachments/assets/b95d4428-2fa4-4372-ac41-98cf2c303998" />
+<img width="1678" height="766" alt="image" src="https://github.com/user-attachments/assets/1b075590-c5a2-4e8a-af79-d62f3794d2e8" />
+
+
+### 门户后端架构
+```python
+with Diagram("职麦门户网站架构", show=False, filename="container", direction="TB", graph_attr={"splines": "spline"}):
+    user = Person("用户")
+    pay = System("支付系统", description="支付SDK", external=True)
+    model = System("大模型服务", description="三方模型调用服务", external=True)
+    email_service = System("邮件服务", description="发送注册、通知邮件", external=True)
+
+    with SystemBoundary("web服务"):
+        web_frontend = Container("web应用", technology="React", description="职麦门户网站前端")
+        # ingress = Nginx("职麦Nginx", description="反向代理与负载均衡")
+        ingress = Container("职麦Nginx", technology="Nginx", description="反向代理与负载均衡")
+        web_backend = Container("API应用", technology="FastAPI", description="职麦后端接口服务")
+        voice_service = Container("语音服务", technology="FastAPI", description="语音识别与合成服务")
+        db_master = Database("主数据库", technology="PostgreSQL", description="存储用户数据与业务数据")
+        db_slave = Database("从数据库", technology="PostgreSQL", description="主数据库的只读副本")
+        # redis_cache = Redis("队列、缓存热点数据，提升访问速度")
+        redis_cache = Container("Redis缓存", technology="Redis", description="缓存热点数据，提升访问速度")
+        face_analysis = Container("面部表情分析服务", technology="FastAPI", description="用户人脸识别与分析服务")
+        job_crawler = Container("职位爬虫服务", technology="FastAPI", description="爬取各大招聘网站的职位信息")
+        
+    
+    user >> Relationship("访问") >> web_frontend >> Relationship("展示数据") >> user
+    web_frontend >> Relationship("API") >> ingress
+    ingress >> Relationship("Response") >> web_frontend
+    
+    ingress >> Relationship("转发请求") >> web_backend
+    ingress << Relationship("响应") << web_backend
+    
+    web_backend >> Relationship("读写") << db_master >> Relationship("复制数据") >> db_slave
+    web_backend >> Relationship("读写缓存") << redis_cache
+
+    web_backend >> Relationship("支付、回调") << pay
+
+    web_backend >> Relationship("发送邮件") >> email_service
+    email_service >> Relationship("发送邮件") >> user
+    
+    web_backend >> Relationship("调用模型API") << model
+    web_backend >> Relationship("调用RESTAPI") >> [voice_service, face_analysis, job_crawler]
+```
+<img width="2506" height="1629" alt="image" src="https://github.com/user-attachments/assets/1be3d1aa-6cb7-4d88-a148-b0143e3b7a1f" />
+
+
 
 **当前界面**  
 <img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
