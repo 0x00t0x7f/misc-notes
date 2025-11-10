@@ -546,6 +546,7 @@ Container(alias, "label", "technology", "description")
 + 降低认知负荷
 
 **【参考链接】**  
++ [https://c4model.com/](https://c4model.com/)
 + https://blog.csdn.net/mclongyi/article/details/131142989
 + https://www.cnblogs.com/wzzkaifa/p/19054361
 + https://www.cnblogs.com/jimoliunian/p/18777560
