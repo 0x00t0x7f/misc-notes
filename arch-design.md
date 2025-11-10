@@ -546,7 +546,7 @@ Container(alias, "label", "technology", "description")
 + 降低认知负荷
 
 **【参考链接】**  
-+ [https://www.cnblogs.com/wzj4858/p/17934274.html](https://blog.csdn.net/mclongyi/article/details/131142989)
++ https://blog.csdn.net/mclongyi/article/details/131142989
 + https://www.cnblogs.com/wzzkaifa/p/19054361
 + https://www.cnblogs.com/jimoliunian/p/18777560
 + https://www.jianshu.com/p/c90203659433
