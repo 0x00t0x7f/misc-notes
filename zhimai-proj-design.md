@@ -274,8 +274,7 @@ with Diagram("职麦门户网站架构", show=False, filename="container", direc
     web_backend >> Relationship("调用模型API") << model
     web_backend >> Relationship("调用RESTAPI") >> [voice_service, face_analysis, job_crawler]
 ```
-<img width="2506" height="1629" alt="image" src="https://github.com/user-attachments/assets/1be3d1aa-6cb7-4d88-a148-b0143e3b7a1f" />
-
+<img width="2506" height="1390" alt="image" src="https://github.com/user-attachments/assets/6f375254-bce6-492f-96ad-e6776dd97f30" />
 
 
 **当前界面**  
