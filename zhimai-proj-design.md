@@ -276,6 +276,34 @@ with Diagram("职麦门户网站架构", show=False, filename="container", direc
 ```
 <img width="2506" height="1390" alt="image" src="https://github.com/user-attachments/assets/6f375254-bce6-492f-96ad-e6776dd97f30" />
 
+**后端拆分**  
+```
+@startuml
+package "核心域" {
+    [简历管理] as ResumeManager
+    [积分管理] as ScoreManager
+    [支付管理] as PayManager
+}
+
+package "通用域" {
+    [认证组件] as Auth
+    [权限组件] as ACL
+    [用户管理] as UserManager
+}
+
+package "支撑域" {
+    [任务调度管理] as TaskScheduleManager
+    [消息中心] as NotifyManager
+    [工单管理] as WorkOrder
+}
+
+Auth --> UserManager : 查询用户
+UserManager --> ACL : 鉴权
+
+通用域 --> "核心域"
+通用域 --> "支撑域"
+@enduml
+```
 
 **当前界面**  
 <img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
