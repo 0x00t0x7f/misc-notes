@@ -304,6 +304,8 @@ UserManager --> ACL : 鉴权
 通用域 --> "支撑域"
 @enduml
 ```
+<img width="1045" height="498" alt="image" src="https://github.com/user-attachments/assets/ee8c68d7-4a74-453d-bd3f-6fbb9dde7c53" />
+
 
 **当前界面**  
 <img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
