@@ -113,9 +113,35 @@ C--->|拥有授权 N..N|E
 
 ### 防腐层&依赖倒置
 
-# DDD之django项目中实践
-在ddd落地django项目前，先了解下django的分层设计模式。django有两种分层设计模式（MTV）和（MVC），一般我们常见的是MTV模式，也就是 Model、View、Template，但其实在如今前后端分离项目中，我们很少用到django的template，我们只用到了MV，那T去哪了？
+# DDD在Django项目中的实践
+在ddd落地django项目前，先了解下分层设计模式。常见的主要有两种分层设计模式（MVT）和（MVC），django采用的是MVT模式，也就是 Model、View、Template，但其实在如今前后端分离项目中，我们很少用到django的template，我们只用到了MV，那T去哪了？
 T就是前端的vue、react、等前端框架，前后端通过api接口交互。 那C（控制器）是什么？C就是Django框架本身， 它通过配置的路由将请求分发给匹配的视图处理。
+```
+@startuml
+package "Django框架" {
+    component [路由]  as Router
+    [视图] as View
+    [模板] as Template
+    [模型] as Model
+    [Django中间件] as MiddleWare
+}
+
+'cloud 服务器 as Server
+'actor 用户 as User
+'component 浏览器 as Browser
+'User .-> Browser: 访问浏览器
+'Browser .-> Server: http/https请求
+'Server <-.-> "Django框架"
+
+Router .-> MiddleWare: 路由匹配
+MiddleWare .-> View: 中间件预处理
+View -.-> Model: 业务逻辑、模型交互
+Model -.-> View: 返回数据
+View -.-> Template: 数据嵌入，视图函数将处理后的数据传递给模板
+Template -.-> View: 模板引擎渲染成最终的HTML内容
+View .-> MiddleWare: 中间件后处理
+@enduml
+```
 
 ## MVC分层模式
 |名称|功能|
@@ -131,7 +157,41 @@ T就是前端的vue、react、等前端框架，前后端通过api接口交互�
 |View|主要用于执行业务逻辑，从模型获取数据，将数据给到特定模板进行渲染后呈现给用户|
 |Template|可视为表示层，主要是用户界面相关，也就是我们所说的前端|
 
+如果拿MVC分层模式和MVT找对应关系，可以将MVC模式中的 控制器理解为 MVT模式中的视图， 将MVC模式中的视图理解为MVT模式中的模板。
+
 ## MVT和MVC的区别？
 MVC和MVT两种模式的主要区别在于：在MVC模式中，开发者需要编写所有和控制器相关的代码，但是在MVT模式中，框架本身完成了控制器相关功能
 在经典的MVC模式下，当用户通过浏览器发起一个请求后，将触发控制器中的一个功能调用，然后控制器要么告诉模型修改数据库并更新视图，要么基于模型返回一个更新后的视图。也就是说视图是由控制器和模型控制的
 MVT模式的处理逻辑稍有不同：当一个用户发起一次HTTP请求后，相关的视图将通过模型执行一次查询，进而获取查询的结果，最后视图将结果数据填进模板后发送给用户
+
++ 职责划分
+  - 在MVC中，Controller负责处理用户输入和业务逻辑，View负责展示数据
+  - 在MTV中，View（视图）负责处理HTTP请求，协调Model和Template，而Template负责展示数据
+
++ 灵活性
+  - MVC模式在桌面应用和Web应用中都有广泛应用
+  - MTV模式特别适合Web开发，尤其是数据驱动的应用，因为Template可以更灵活地生成动态内容
+
+## DDD分层与Django分层模式对应关系（DDD视角）
+|Level|DDD|Django|
+|-----|-----|------|
+|表现层|负责与用户交互，展示数据和处理用户输入|View+Temaplte共同构成DDD表现层、无业务逻辑|
+|应用层|协调业务流程，处理用例，调用领域层服务；此层可以包含简单的查询逻辑，但核心复杂业务逻辑必须下沉到领域层|View+自定义Service类（处理复杂的业务逻辑，而不直接在视图中实现）；\n视图可以作为应用层的入口，调用服务类处理业务逻辑；应用服务类协调领域层的服务。|
+|领域层|包含业务逻辑、实体、值对象、仓储接口定义等核心业务模型|Model（避免直接依赖django的orm）+自定义领域服务（在模型中或外部实现领域服务，处理核心业务逻辑）|
+|基础设施层|处理与外部系统的交互，如数据库访问、消息队列、外部API调用等；仓储实现层+PO持久化层|数据库后端+管理器类+第三方库和API；django中的某些中间件也属于基础设施层|
+|仓储模式|用于将数据库访问逻辑从领域层分离保持领域层的独立性|django可以通过 自定义仓储类+使用django的orm 实现仓储模式（确保领域层不直接依赖ORM）。见[示例代码](#ddd01)|
+|领域事件|用于处理领域内的事件驱动逻辑|可以使用信号 signals 实现领域事件的处理|
+
+**<span id='ddd01'>仓储模式示例代码</span>**   
+```
+# 仓储接口
+class UserRepository(ABC):
+    @abstractmethod
+    def get_user(self, user_id):
+        pass
+
+# 仓储实现
+class DjangoUserRepository(UserRepository):
+    def get_user(self, user_id):
+        return User.objects.get(id=user_id)
+```
