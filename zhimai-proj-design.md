@@ -282,7 +282,7 @@ with Diagram("职麦门户网站架构", show=False, filename="container", direc
 package "核心域" {
     [简历管理] as ResumeManager
     [积分管理] as ScoreManager
-    [支付管理] as PayManager
+    [订单管理] as OrderManager
 }
 
 package "通用域" {
