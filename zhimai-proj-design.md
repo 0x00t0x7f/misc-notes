@@ -360,8 +360,9 @@ UserManager --> ACL : 鉴权
 + 工单后端实现
 + 部分接口传参换种形式
 + 解决项目中的硬编码问题，考虑统一配置
-+ 代码层级混乱问题
++ 代码层级混乱问题，代码重构
 + 清理无用接口，减少暴露面
++ 部分重要配置文件考虑加密
 
 ## 全景架构
 <img width="2855" height="2282" alt="image" src="https://github.com/user-attachments/assets/992ac378-b904-45bb-821b-66e590f60ad0" />
