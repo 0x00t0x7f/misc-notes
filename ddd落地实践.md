@@ -172,6 +172,9 @@ MVT模式的处理逻辑稍有不同：当一个用户发起一次HTTP请求后�
   - MVC模式在桌面应用和Web应用中都有广泛应用
   - MTV模式特别适合Web开发，尤其是数据驱动的应用，因为Template可以更灵活地生成动态内容
 
+<img width="810" height="480" alt="image" src="https://github.com/user-attachments/assets/b883c2bf-d0cf-4af0-86fc-2d754cb7cb9b" />
+
+
 ## DDD分层与Django分层模式对应关系（DDD视角）
 |Level|DDD|Django|
 |-----|-----|------|
