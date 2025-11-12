@@ -363,6 +363,10 @@ UserManager --> ACL : 鉴权
 + 代码层级混乱问题
 + 清理无用接口，减少暴露面
 
+## 全景架构
+<img width="2855" height="2043" alt="image" src="https://github.com/user-attachments/assets/50d386de-2859-470d-aadf-a1f06de3bc02" />
+
+
 ## 后续规划
 + [ ] 职位雷达，根据地理位置扫描周围的企业招聘信息（需购买地理信息数据库）
 + [ ] 求职广播，在地图上画圈并根据简历自动匹配合适的企业岗位，自动生成匹配列表，一键发送
