@@ -364,8 +364,7 @@ UserManager --> ACL : 鉴权
 + 清理无用接口，减少暴露面
 
 ## 全景架构
-<img width="2855" height="2043" alt="image" src="https://github.com/user-attachments/assets/50d386de-2859-470d-aadf-a1f06de3bc02" />
-
+<img width="2855" height="2282" alt="image" src="https://github.com/user-attachments/assets/992ac378-b904-45bb-821b-66e590f60ad0" />
 
 ## 后续规划
 + [ ] 职位雷达，根据地理位置扫描周围的企业招聘信息（需购买地理信息数据库）
