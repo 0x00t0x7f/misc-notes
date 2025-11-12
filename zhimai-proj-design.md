@@ -311,6 +311,58 @@ UserManager --> ACL : 鉴权
 <img width="2536" height="1263" alt="image" src="https://github.com/user-attachments/assets/2e258ebc-5bd7-4323-b7b1-7069b3632200" />
 <img width="1197" height="769" alt="image" src="https://github.com/user-attachments/assets/ac7818e1-b0e1-4bec-bb24-b22808150292" />
 
+## 识别到的接口列表
+**仪表盘**  
++ /api/v1/workplace-news/latest/list
++ /api/v1/monthly-stats
++ /api/v1/payment/subscription/
++ /api/v1/points/history/（在会议助手页面请求次数太多）
+**模拟面试**  
++ /api/v1/mock-interview/upload-resume
++ /api/v1/mock-interview/generate
++ /api/v1/mock-interview/chat/stream
++ /api/v1/mock-interview/records/
++ /api/v1/tts/stream
++ /api/v1/interview/ai-reference
++ /api/v1/paraformer/clear
++ /api/v1/paraformer/start
++ /api/v1/custom-interview/upload-materials
+**会议助手**
++ /api/v1/meeting-assistant/records/
++ /api/v1/paraformer/stop
++ /api/v1/points/consume-by-duration
+**找工作**
++ /api/v1/search/sessions
++ /api/v1/search/jobs
+**简历诊断**
++ /api/v1/resume-diagnosis/full-with-skills（阻塞接口、需优化）
+**面试押题**
++ /api/v1/interview-prep/upload-resume
++ /api/v1/interview-prep/ai-generate（重点优化）
++ /api/v1/interview-prep/history
+**经典题库**
++ /classic-questions
+**消息通知**
++ /api/v1/referral/stats/（会调用模拟面试的接口，需要优化）
+**账户设置**
++ 
+**立即升级**
++
+**合作推广**  
++ /api/v1/invite-code/
++ 
+
+## 待优化点
++ 接口重复调用
++ 仪表盘-添加事件没有接口
++ 部分接口应该频闭多余信息
++ 意见反馈后端补充
++ 工单后端实现
++ 部分接口传参换种形式
++ 解决项目中的硬编码问题，考虑统一配置
++ 代码层级混乱问题
++ 清理无用接口，减少暴露面
+
 ## 后续规划
 + [ ] 职位雷达，根据地理位置扫描周围的企业招聘信息（需购买地理信息数据库）
 + [ ] 求职广播，在地图上画圈并根据简历自动匹配合适的企业岗位，自动生成匹配列表，一键发送
