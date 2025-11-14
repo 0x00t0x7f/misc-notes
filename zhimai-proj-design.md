@@ -304,6 +304,33 @@ UserManager --> ACL : 鉴权
 通用域 --> "支撑域"
 @enduml
 ```
+**领域重新拆分**  
+```
+@startuml
+package "核心子域" {
+    [简历管理] as ResumeManager
+    [订单上下文] as OrderManager
+    [支付上下文] as PayManager
+}
+
+package "通用子域" {
+    [缓存上下文] as CacheContext
+    [工具上下文] as ToolsManager
+}
+
+package "支撑子域" {
+    [用户上下文] as UserManager
+    [消息通知上下文] as NotifyManager
+    [工单上下文] as WorkOrder
+}
+
+
+queue "redis队列" as redis_queue
+
+'Auth .-> UserManager : 查询用户，会员等级，权限，认证，积分
+@enduml
+```
+
 <img width="1045" height="498" alt="image" src="https://github.com/user-attachments/assets/ee8c68d7-4a74-453d-bd3f-6fbb9dde7c53" />
 
 
