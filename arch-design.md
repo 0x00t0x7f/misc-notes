@@ -753,6 +753,7 @@ DDD是一种针对复杂业务领域的软件开发方法论，C4模型是一种
 
 ### 相关资料
 + https://github.com/jovezhao/nest
++ https://blog.csdn.net/fsfjdtpzus/article/details/144009232
 
 ### Tools
 + diagrams.net（快速草图、轻量级、原draw.io）
