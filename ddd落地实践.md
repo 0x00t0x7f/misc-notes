@@ -210,3 +210,6 @@ class DjangoUserRepository(UserRepository):
     def get_user(self, user_id):
         return User.objects.get(id=user_id)
 ```
+
+# 相关资料
++ https://www.cnblogs.com/dennyzhangdd/p/14376904.html
