@@ -230,6 +230,322 @@ class DjangoUserRepository(UserRepository):
         return User.objects.get(id=user_id)
 ```
 
+## DDD示例项目一：图书管理系统
+故事：我需要一个图书管理系统，包含图书入库，借阅，归还，借阅临近日短信提醒等功能，请使用DDD分层架构思想实现这样的系统
+我们使用 fastapi+sqlalchemy来实现这样一个系统
+### 1、项目初始化
+```
+mkdir library_management_system
+cd library_management_system
+python -m venv venv
+source venv/bin/activate  # 在Windows上使用 .\venv\Scripts\activate
+pip install fastapi sqlalchemy python-dotenv
+```
+### 2、项目结构设计
+根据DDD分层架构，设计项目的目录结构：
+```
+library_management_system/
+├── app/
+│   ├── domain/
+│   │   ├── models.py  # 实体类
+│   │   └── services.py  # 领域服务
+│   ├── application/
+│   │   └── services.py  # 应用服务
+│   └── infrastructure/
+│       ├── repositories/
+│       │   └── book_repository.py
+│       └── notification_service.py
+├── presentation/
+│   └── routes.py
+├── main.py  # FastAPI应用入口
+└── .env  # 环境变量配置
+```
+### 3、领域层实现
+**在app/domain/models.py中定义实体类**：  
+```python
+from datetime import datetime
+
+class Book:
+    def __init__(self, book_id, title, author, isbn):
+        self.book_id = book_id
+        self.title = title
+        self.author = author
+        self.isbn = isbn
+        self.status = "available"  # available, borrowed, maintenance
+
+    def borrow(self):
+        if self.status == "available":
+            self.status = "borrowed"
+            return True
+        return False
+
+    def return_book(self):
+        if self.status == "borrowed":
+            self.status = "available"
+            return True
+        return False
+
+class BorrowRecord:
+    def __init__(self, record_id, book, user, borrow_date):
+        self.record_id = record_id
+        self.book = book
+        self.user = user
+        self.borrow_date = borrow_date
+        self.return_date = borrow_date + datetime.timedelta(days=14)  # 默认借期14天
+
+    def days_remaining(self):
+        today = datetime.datetime.today()
+        delta = self.return_date - today
+        return delta.days
+
+    def is_overdue(self):
+        today = datetime.datetime.today()
+        return today > self.return_date
+```
+**在app/domain/services.py中定义领域服务**：  
+```python
+class BookManagementService:
+    def __init__(self, book_repository):
+        self.book_repository = book_repository
+
+    def add_book(self, book):
+        self.book_repository.save(book)
+
+    def borrow_book(self, book_id, user):
+        book = self.book_repository.find_by_id(book_id)
+        if book.borrow():
+            borrow_record = BorrowRecord(
+                record_id=generate_id(),
+                book=book,
+                user=user,
+                borrow_date=datetime.datetime.today()
+            )
+            self.book_repository.save_borrow_record(borrow_record)
+            return True
+        return False
+
+    def return_book(self, book_id):
+        book = self.book_repository.find_by_id(book_id)
+        if book.return_book():
+            self.book_repository.update_book(book)
+            return True
+        return False
+```
+### 4、应用层实现
+**在app/application/services.py中定义应用服务**：  
+```python
+class BookApplicationService:
+    def __init__(self, book_management_service, notification_service):
+        self.book_management_service = book_management_service
+        self.notification_service = notification_service
+
+    def add_book(self, book):
+        self.book_management_service.add_book(book)
+
+    def borrow_book(self, book_id, user):
+        success = self.book_management_service.borrow_book(book_id, user)
+        if success:
+            self.notification_service.send_borrow_confirmation(user, book_id)
+        return success
+
+    def return_book(self, book_id):
+        success = self.book_management_service.return_book(book_id)
+        if success:
+            self.notification_service.send_return_confirmation(book_id)
+        return success
+
+    def check_overdue(self):
+        records = self.book_management_service.get_all_borrow_records()
+        for record in records:
+            if record.is_overdue():
+                self.notification_service.send_overdue_notification(record.user, record.book)
+```
+### 5、基础设施层实现
+**在app/infrastructure/repositories/book_repository.py中定义书籍仓库**：  
+```python
+from sqlalchemy import create_engine, Column, Integer, String, Date
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+Base = declarative_base()
+
+class BookDB(Base):
+    __tablename__ = 'books'
+    book_id = Column(Integer, primary_key=True)
+    title = Column(String)
+    author = Column(String)
+    isbn = Column(String)
+    status = Column(String)
+
+class BorrowRecordDB(Base):
+    __tablename__ = 'borrow_records'
+    record_id = Column(Integer, primary_key=True)
+    book_id = Column(Integer)
+    user_id = Column(Integer)
+    borrow_date = Column(Date)
+    return_date = Column(Date)
+
+engine = create_engine('sqlite:///library.db')
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+class BookRepository:
+    def save(self, book):
+        book_db = BookDB(
+            book_id=book.book_id,
+            title=book.title,
+            author=book.author,
+            isbn=book.isbn,
+            status=book.status
+        )
+        session.add(book_db)
+        session.commit()
+
+    def find_by_id(self, book_id):
+        book_db = session.query(BookDB).filter_by(book_id=book_id).first()
+        if not book_db:
+            return None
+        return Book(
+            book_id=book_db.book_id,
+            title=book_db.title,
+            author=book_db.author,
+            isbn=book_db.isbn,
+            status=book_db.status
+        )
+
+    def save_borrow_record(self, borrow_record):
+        borrow_record_db = BorrowRecordDB(
+            record_id=borrow_record.record_id,
+            book_id=borrow_record.book.book_id,
+            user_id=borrow_record.user.user_id,
+            borrow_date=borrow_record.borrow_date,
+            return_date=borrow_record.return_date
+        )
+        session.add(borrow_record_db)
+        session.commit()
+
+    def get_all_borrow_records(self):
+        records_db = session.query(BorrowRecordDB).all()
+        records = []
+        for record_db in records_db:
+            book = self.find_by_id(record_db.book_id)
+            user = User(user_id=record_db.user_id, name="", phone_number="")
+            record = BorrowRecord(
+                record_id=record_db.record_id,
+                book=book,
+                user=user,
+                borrow_date=record_db.borrow_date
+            )
+            records.append(record)
+        return records
+
+    def update_book(self, book):
+        book_db = session.query(BookDB).filter_by(book_id=book.book_id).first()
+        if book_db:
+            book_db.status = book.status
+            session.commit()
+```
+**在app/infrastructure/notification_service.py中定义通知服务**：  
+```python
+class SMSNotificationService:
+    def send_borrow_confirmation(self, user, book_id):
+        message = f"您已成功借阅书籍，ID: {book_id}。请按时归还。"
+        self.send_sms(user.phone_number, message)
+
+    def send_return_confirmation(self, book_id):
+        message = f"书籍ID: {book_id}已成功归还。感谢您的使用。"
+        self.send_sms("library@system.com", message)
+
+    def send_overdue_notification(self, user, book):
+        message = f"您借阅的书籍《{book.title}》已逾期，请尽快归还。"
+        self.send_sms(user.phone_number, message)
+
+    def send_sms(self, recipient, message):
+        # 调用短信API发送短信
+        pass
+```
+
+### 6、表现层实现
+**在presentation/routes.py中定义API路由**：  
+```python
+from fastapi import APIRouter, HTTPException
+from app.domain.models import Book
+from app.application.services import BookApplicationService
+
+router = APIRouter()
+
+@router.post("/books")
+async def add_book(book: Book):
+    try:
+        BookApplicationService.add_book(book)
+        return {"message": "Book added successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/borrow")
+async def borrow_book(book_id: int, user: User):
+    try:
+        success = BookApplicationService.borrow_book(book_id, user)
+        if success:
+            return {"message": "Book borrowed successfully"}
+        else:
+            return {"message": "Book is not available"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/return")
+async def return_book(book_id: int):
+    try:
+        success = BookApplicationService.return_book(book_id)
+        if success:
+            return {"message": "Book returned successfully"}
+        else:
+            return {"message": "Return failed"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/check-overdue")
+async def check_overdue():
+    try:
+        BookApplicationService.check_overdue()
+        return {"message": "Overdue check completed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+### 7、FastAPI应用入口
+**在main.py中定义FastAPI应用**：  
+```python
+from fastapi import FastAPI
+from app.domain.services import BookManagementService
+from app.infrastructure.repositories import BookRepository
+from app.infrastructure.notification_service import SMSNotificationService
+from app.application.services import BookApplicationService
+from presentation.routes import router
+
+app = FastAPI()
+
+# 依赖注入
+book_repository = BookRepository()
+notification_service = SMSNotificationService()
+book_management_service = BookManagementService(book_repository)
+book_application_service = BookApplicationService(book_management_service, notification_service)
+
+app.include_router(router)
+```
+### 8、环境变量配置
+**在.env文件中配置数据库连接和其他环境变量**：  
+```
+DATABASE_URL = "sqlite:///library.db"
+```
+
+### 9、运行应用
+```
+uvicorn main:app --reload
+```
+
+
+
 # 相关资料
 + https://www.cnblogs.com/dennyzhangdd/p/14376904.html
 + https://www.cnblogs.com/davenkin/p/ddd-introduction.html
