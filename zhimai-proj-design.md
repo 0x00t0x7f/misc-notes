@@ -394,6 +394,7 @@ queue "redis队列" as redis_queue
 ## 全景架构
 <img width="2855" height="2282" alt="image" src="https://github.com/user-attachments/assets/992ac378-b904-45bb-821b-66e590f60ad0" />
 
+
 ## 后续规划
 + [ ] 职位雷达，根据地理位置扫描周围的企业招聘信息（需购买地理信息数据库）
 + [ ] 求职广播，在地图上画圈并根据简历自动匹配合适的企业岗位，自动生成匹配列表，一键发送
