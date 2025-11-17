@@ -544,7 +544,12 @@ DATABASE_URL = "sqlite:///library.db"
 uvicorn main:app --reload
 ```
 
-
+### 10、解釋
++ 领域：整个图书管理系统是一个领域，包含了所有与图书管理相关的业务逻辑
++ 子域
+  - 图书管理子域（图书管理上下文）
+  - 借阅管理子域（借阅管理上下文）
++ 限界上下文：限界上下文定义了子域的边界和语义。并帮助我们明确不同子域之间的关系和交互方式
 
 # 相关资料
 + https://www.cnblogs.com/dennyzhangdd/p/14376904.html
