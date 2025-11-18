@@ -8,7 +8,7 @@
 graph TD
     %% 1. 定义子域（大模块划分）
     subgraph 核心子域-用户域
-        subgraph 限界上下文：用户上下文
+        subgraph 用户上下文
             U_AGG[聚合根：User<br/>(用户实体)]
             U_EVT1[领域事件：UserRegisteredEvent<br/>(用户注册成功)]
             U_EVT2[领域事件：UserEmailVerifiedEvent<br/>(邮箱验证成功)]
@@ -16,7 +16,7 @@ graph TD
     end
 
     subgraph 核心子域-积分域
-        subgraph 限界上下文：积分上下文
+        subgraph 积分上下文
             P_AGG[聚合根：PointsAccount<br/>(积分账户)]
             P_EVT[领域事件：PointsDeductedEvent<br/>(积分扣减成功)]
             P_CMD[命令：DeductPointsCmd<br/>(扣减积分指令)]
@@ -24,14 +24,14 @@ graph TD
     end
 
     subgraph 核心子域-面试服务域
-        subgraph 限界上下文：模拟面试上下文
+        subgraph 模拟面试上下文
             I_AGG[聚合根：InterviewSession<br/>(面试会话)]
             I_EVT[领域事件：InterviewCreatedEvent<br/>(面试会话创建)]
         end
     end
 
     subgraph 通用子域-通知域
-        subgraph 限界上下文：通知上下文
+        subgraph 通知上下文
             N_AGG[聚合根：Notification<br/>(通知记录)]
             N_SVC[领域服务：EmailNotificationSvc<br/>(邮件通知服务)]
         end
