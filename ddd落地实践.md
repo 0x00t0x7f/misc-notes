@@ -129,6 +129,7 @@ C--->|拥有授权 N..N|E
 ## 服务调用
 ### 域内调用
 领域内调用，随便调用。至于实现，可以由一个核心域的仓储实现层（第四层）去实现多个Repository接口。（比如这里A是核心域的实体名，B是支撑域、通用域等）
+
 <img width="339" height="237" alt="image" src="https://github.com/user-attachments/assets/4e79519d-db5b-49f0-a452-8d4587cd64c6" />
 
 ### 跨域调用
