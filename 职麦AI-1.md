@@ -394,819 +394,469 @@ jobmai\_ai/
 ```
 
 ### 5.2 领域层示例（用户实体）
-
-
-
-```
-\# app/domain/user/entities.py
-
+```python
+# app/domain/user/entities.py
 from dataclasses import dataclass
-
 from datetime import datetime
-
 from typing import Optional
-
 from uuid import uuid4
 
-from app.domain.user.value\_objects import UserId, Email, UserProfile
-
+from app.domain.user.value_objects import UserId, Email, UserProfile
 from app.domain.user.enums import UserStatus
 
+
 @dataclass(frozen=True)
-
 class User:
+    user_id: UserId
+    email: Email
+    password_hash: str
+    status: UserStatus
+    profile: UserProfile
+    registered_at: datetime
+    last_login_at: Optional[datetime] = None
 
-&#x20;   user\_id: UserId
+    @classmethod
+    def register(
+        cls, 
+        email: Email, 
+        password_hash: str, 
+        profile: UserProfile
+    ) -> "User":
+        """注册新用户"""
+        return cls(
+            user_id=UserId(str(uuid4())),
+            email=email,
+            password_hash=password_hash,
+            status=UserStatus.PENDING_VERIFICATION,
+            profile=profile,
+            registered_at=datetime.utcnow()
+        )
 
-&#x20;   email: Email
+    def update_profile(self, new_profile: UserProfile) -> "User":
+        """更新用户资料"""
+        return self.__class__(
+            user_id=self.user_id,
+            email=self.email,
+            password_hash=self.password_hash,
+            status=self.status,
+            profile=new_profile,
+            registered_at=self.registered_at,
+            last_login_at=self.last_login_at
+        )
 
-&#x20;   password\_hash: str
+    def verify_email(self) -> "User":
+        """验证邮箱"""
+        if self.status != UserStatus.PENDING_VERIFICATION:
+            raise ValueError("User is already verified")
+            
+        return self.__class__(
+            user_id=self.user_id,
+            email=self.email,
+            password_hash=self.password_hash,
+            status=UserStatus.ACTIVE,
+            profile=self.profile,
+            registered_at=self.registered_at,
+            last_login_at=self.last_login_at
+        )
 
-&#x20;   status: UserStatus
-
-&#x20;   profile: UserProfile
-
-&#x20;   registered\_at: datetime
-
-&#x20;   last\_login\_at: Optional\[datetime] = None
-
-&#x20;   @classmethod
-
-&#x20;   def register(
-
-&#x20;       cls,&#x20;
-
-&#x20;       email: Email,&#x20;
-
-&#x20;       password\_hash: str,&#x20;
-
-&#x20;       profile: UserProfile
-
-&#x20;   ) -> "User":
-
-&#x20;       """注册新用户"""
-
-&#x20;       return cls(
-
-&#x20;           user\_id=UserId(str(uuid4())),
-
-&#x20;           email=email,
-
-&#x20;           password\_hash=password\_hash,
-
-&#x20;           status=UserStatus.PENDING\_VERIFICATION,
-
-&#x20;           profile=profile,
-
-&#x20;           registered\_at=datetime.utcnow()
-
-&#x20;       )
-
-&#x20;   def update\_profile(self, new\_profile: UserProfile) -> "User":
-
-&#x20;       """更新用户资料"""
-
-&#x20;       return self.\_\_class\_\_(
-
-&#x20;           user\_id=self.user\_id,
-
-&#x20;           email=self.email,
-
-&#x20;           password\_hash=self.password\_hash,
-
-&#x20;           status=self.status,
-
-&#x20;           profile=new\_profile,
-
-&#x20;           registered\_at=self.registered\_at,
-
-&#x20;           last\_login\_at=self.last\_login\_at
-
-&#x20;       )
-
-&#x20;   def verify\_email(self) -> "User":
-
-&#x20;       """验证邮箱"""
-
-&#x20;       if self.status != UserStatus.PENDING\_VERIFICATION:
-
-&#x20;           raise ValueError("User is already verified")
-
-&#x20;          &#x20;
-
-&#x20;       return self.\_\_class\_\_(
-
-&#x20;           user\_id=self.user\_id,
-
-&#x20;           email=self.email,
-
-&#x20;           password\_hash=self.password\_hash,
-
-&#x20;           status=UserStatus.ACTIVE,
-
-&#x20;           profile=self.profile,
-
-&#x20;           registered\_at=self.registered\_at,
-
-&#x20;           last\_login\_at=self.last\_login\_at
-
-&#x20;       )
-
-&#x20;   def update\_last\_login(self) -> "User":
-
-&#x20;       """更新最后登录时间"""
-
-&#x20;       return self.\_\_class\_\_(
-
-&#x20;           user\_id=self.user\_id,
-
-&#x20;           email=self.email,
-
-&#x20;           password\_hash=self.password\_hash,
-
-&#x20;           status=self.status,
-
-&#x20;           profile=self.profile,
-
-&#x20;           registered\_at=self.registered\_at,
-
-&#x20;           last\_login\_at=datetime.utcnow()
-
-&#x20;       )
+    def update_last_login(self) -> "User":
+        """更新最后登录时间"""
+        return self.__class__(
+            user_id=self.user_id,
+            email=self.email,
+            password_hash=self.password_hash,
+            status=self.status,
+            profile=self.profile,
+            registered_at=self.registered_at,
+            last_login_at=datetime.utcnow()
+        )
 ```
 
 ### 5.3 值对象示例
 
-
-
-```
-\# app/domain/user/value\_objects.py
-
+```python
+# app/domain/user/value_objects.py
 from dataclasses import dataclass
-
 import re
-
 from typing import Optional
 
-@dataclass(frozen=True)
 
+@dataclass(frozen=True)
 class UserId:
+    value: str
 
-&#x20;   value: str
+    def __post_init__(self):
+        if not self.value:
+            raise ValueError("User ID cannot be empty")
 
-&#x20;   def \_\_post\_init\_\_(self):
-
-&#x20;       if not self.value:
-
-&#x20;           raise ValueError("User ID cannot be empty")
 
 @dataclass(frozen=True)
-
 class Email:
+    value: str
 
-&#x20;   value: str
+    def __post_init__(self):
+        if not self.is_valid():
+            raise ValueError(f"Invalid email address: {self.value}")
 
-&#x20;   def \_\_post\_init\_\_(self):
+    def is_valid(self) -> bool:
+        """验证邮箱格式"""
+        pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        return re.match(pattern, self.value) is not None
 
-&#x20;       if not self.is\_valid():
+    def __str__(self) -> str:
+        return self.value
 
-&#x20;           raise ValueError(f"Invalid email address: {self.value}")
-
-&#x20;   def is\_valid(self) -> bool:
-
-&#x20;       """验证邮箱格式"""
-
-&#x20;       pattern = r"^\[a-zA-Z0-9\_.+-]+@\[a-zA-Z0-9-]+\\.\[a-zA-Z0-9-.]+\$"
-
-&#x20;       return re.match(pattern, self.value) is not None
-
-&#x20;   def \_\_str\_\_(self) -> str:
-
-&#x20;       return self.value
 
 @dataclass(frozen=True)
-
 class UserProfile:
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+    job_title: Optional[str] = None
+    industry: Optional[str] = None
 
-&#x20;   full\_name: Optional\[str] = None
-
-&#x20;   phone: Optional\[str] = None
-
-&#x20;   avatar: Optional\[str] = None
-
-&#x20;   job\_title: Optional\[str] = None
-
-&#x20;   industry: Optional\[str] = None
-
-&#x20;   def update(self, \*\*kwargs) -> "UserProfile":
-
-&#x20;       """更新用户资料"""
-
-&#x20;       new\_fields = {k: v for k, v in kwargs.items() if hasattr(self, k)}
-
-&#x20;       return self.\_\_class\_\_(\*\* {\*\*self.\_\_dict\_\_,\*\* new\_fields})
+    def update(self, **kwargs) -> "UserProfile":
+        """更新用户资料"""
+        new_fields = {k: v for k, v in kwargs.items() if hasattr(self, k)}
+        return self.__class__(** {**self.__dict__,** new_fields})
 ```
 
 ### 5.4 仓储接口与实现
-
-
-
-```
-\# app/domain/user/repositories.py
-
+```python
+# app/domain/user/repositories.py
 from abc import ABC, abstractmethod
-
 from typing import Optional, List
 
 from app.domain.user.entities import User
+from app.domain.user.value_objects import UserId, Email
 
-from app.domain.user.value\_objects import UserId, Email
 
 class UserRepository(ABC):
+    @abstractmethod
+    def get_by_id(self, user_id: UserId) -> Optional[User]:
+        """根据ID获取用户"""
+        raise NotImplementedError()
 
-&#x20;   @abstractmethod
+    @abstractmethod
+    def get_by_email(self, email: Email) -> Optional[User]:
+        """根据邮箱获取用户"""
+        raise NotImplementedError()
 
-&#x20;   def get\_by\_id(self, user\_id: UserId) -> Optional\[User]:
+    @abstractmethod
+    def add(self, user: User) -> None:
+        """添加用户"""
+        raise NotImplementedError()
 
-&#x20;       """根据ID获取用户"""
+    @abstractmethod
+    def update(self, user: User) -> None:
+        """更新用户"""
+        raise NotImplementedError()
 
-&#x20;       raise NotImplementedError()
-
-&#x20;   @abstractmethod
-
-&#x20;   def get\_by\_email(self, email: Email) -> Optional\[User]:
-
-&#x20;       """根据邮箱获取用户"""
-
-&#x20;       raise NotImplementedError()
-
-&#x20;   @abstractmethod
-
-&#x20;   def add(self, user: User) -> None:
-
-&#x20;       """添加用户"""
-
-&#x20;       raise NotImplementedError()
-
-&#x20;   @abstractmethod
-
-&#x20;   def update(self, user: User) -> None:
-
-&#x20;       """更新用户"""
-
-&#x20;       raise NotImplementedError()
-
-&#x20;   @abstractmethod
-
-&#x20;   def delete(self, user\_id: UserId) -> None:
-
-&#x20;       """删除用户"""
-
-&#x20;       raise NotImplementedError()
+    @abstractmethod
+    def delete(self, user_id: UserId) -> None:
+        """删除用户"""
+        raise NotImplementedError()
 ```
 
 
-
-```
-\# app/infrastructure/repositories/user\_repository.py
-
+```python
+# app/infrastructure/repositories/user_repository.py
 from typing import Optional, List
-
 from sqlalchemy.orm import Session
 
 from app.domain.user.entities import User
-
 from app.domain.user.repositories import UserRepository
-
-from app.domain.user.value\_objects import UserId, Email, UserProfile
-
+from app.domain.user.value_objects import UserId, Email, UserProfile
 from app.domain.user.enums import UserStatus
-
 from app.infrastructure.database.models import UserModel
 
+
 class SqlAlchemyUserRepository(UserRepository):
-
-&#x20;   def \_\_init\_\_(self, session: Session):
-
-&#x20;       self.session = session
-
-&#x20;   def get\_by\_id(self, user\_id: UserId) -> Optional\[User]:
-
-&#x20;       user\_model = self.session.query(UserModel).filter(
-
-&#x20;           UserModel.user\_id == user\_id.value
-
-&#x20;       ).first()
-
-&#x20;      &#x20;
-
-&#x20;       if not user\_model:
-
-&#x20;           return None
-
-&#x20;          &#x20;
-
-&#x20;       return self.\_to\_domain(user\_model)
-
-&#x20;   def get\_by\_email(self, email: Email) -> Optional\[User]:
-
-&#x20;       user\_model = self.session.query(UserModel).filter(
-
-&#x20;           UserModel.email == email.value
-
-&#x20;       ).first()
-
-&#x20;      &#x20;
-
-&#x20;       if not user\_model:
-
-&#x20;           return None
-
-&#x20;          &#x20;
-
-&#x20;       return self.\_to\_domain(user\_model)
-
-&#x20;   def add(self, user: User) -> None:
-
-&#x20;       user\_model = UserModel(
-
-&#x20;           user\_id=user.user\_id.value,
-
-&#x20;           email=user.email.value,
-
-&#x20;           password\_hash=user.password\_hash,
-
-&#x20;           status=user.status.value,
-
-&#x20;           full\_name=user.profile.full\_name,
-
-&#x20;           phone=user.profile.phone,
-
-&#x20;           avatar=user.profile.avatar,
-
-&#x20;           job\_title=user.profile.job\_title,
-
-&#x20;           industry=user.profile.industry,
-
-&#x20;           registered\_at=user.registered\_at,
-
-&#x20;           last\_login\_at=user.last\_login\_at
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       self.session.add(user\_model)
-
-&#x20;       self.session.commit()
-
-&#x20;   def update(self, user: User) -> None:
-
-&#x20;       user\_model = self.session.query(UserModel).filter(
-
-&#x20;           UserModel.user\_id == user.user\_id.value
-
-&#x20;       ).first()
-
-&#x20;      &#x20;
-
-&#x20;       if user\_model:
-
-&#x20;           user\_model.email = user.email.value
-
-&#x20;           user\_model.password\_hash = user.password\_hash
-
-&#x20;           user\_model.status = user.status.value
-
-&#x20;           user\_model.full\_name = user.profile.full\_name
-
-&#x20;           user\_model.phone = user.profile.phone
-
-&#x20;           user\_model.avatar = user.profile.avatar
-
-&#x20;           user\_model.job\_title = user.profile.job\_title
-
-&#x20;           user\_model.industry = user.profile.industry
-
-&#x20;           user\_model.last\_login\_at = user.last\_login\_at
-
-&#x20;          &#x20;
-
-&#x20;           self.session.commit()
-
-&#x20;   def delete(self, user\_id: UserId) -> None:
-
-&#x20;       user\_model = self.session.query(UserModel).filter(
-
-&#x20;           UserModel.user\_id == user\_id.value
-
-&#x20;       ).first()
-
-&#x20;      &#x20;
-
-&#x20;       if user\_model:
-
-&#x20;           self.session.delete(user\_model)
-
-&#x20;           self.session.commit()
-
-&#x20;   def \_to\_domain(self, user\_model: UserModel) -> User:
-
-&#x20;       return User(
-
-&#x20;           user\_id=UserId(user\_model.user\_id),
-
-&#x20;           email=Email(user\_model.email),
-
-&#x20;           password\_hash=user\_model.password\_hash,
-
-&#x20;           status=UserStatus(user\_model.status),
-
-&#x20;           profile=UserProfile(
-
-&#x20;               full\_name=user\_model.full\_name,
-
-&#x20;               phone=user\_model.phone,
-
-&#x20;               avatar=user\_model.avatar,
-
-&#x20;               job\_title=user\_model.job\_title,
-
-&#x20;               industry=user\_model.industry
-
-&#x20;           ),
-
-&#x20;           registered\_at=user\_model.registered\_at,
-
-&#x20;           last\_login\_at=user\_model.last\_login\_at
-
-&#x20;       )
+    def __init__(self, session: Session):
+        self.session = session
+
+    def get_by_id(self, user_id: UserId) -> Optional[User]:
+        user_model = self.session.query(UserModel).filter(
+            UserModel.user_id == user_id.value
+        ).first()
+        
+        if not user_model:
+            return None
+            
+        return self._to_domain(user_model)
+
+    def get_by_email(self, email: Email) -> Optional[User]:
+        user_model = self.session.query(UserModel).filter(
+            UserModel.email == email.value
+        ).first()
+        
+        if not user_model:
+            return None
+            
+        return self._to_domain(user_model)
+
+    def add(self, user: User) -> None:
+        user_model = UserModel(
+            user_id=user.user_id.value,
+            email=user.email.value,
+            password_hash=user.password_hash,
+            status=user.status.value,
+            full_name=user.profile.full_name,
+            phone=user.profile.phone,
+            avatar=user.profile.avatar,
+            job_title=user.profile.job_title,
+            industry=user.profile.industry,
+            registered_at=user.registered_at,
+            last_login_at=user.last_login_at
+        )
+        
+        self.session.add(user_model)
+        self.session.commit()
+
+    def update(self, user: User) -> None:
+        user_model = self.session.query(UserModel).filter(
+            UserModel.user_id == user.user_id.value
+        ).first()
+        
+        if user_model:
+            user_model.email = user.email.value
+            user_model.password_hash = user.password_hash
+            user_model.status = user.status.value
+            user_model.full_name = user.profile.full_name
+            user_model.phone = user.profile.phone
+            user_model.avatar = user.profile.avatar
+            user_model.job_title = user.profile.job_title
+            user_model.industry = user.profile.industry
+            user_model.last_login_at = user.last_login_at
+            
+            self.session.commit()
+
+    def delete(self, user_id: UserId) -> None:
+        user_model = self.session.query(UserModel).filter(
+            UserModel.user_id == user_id.value
+        ).first()
+        
+        if user_model:
+            self.session.delete(user_model)
+            self.session.commit()
+
+    def _to_domain(self, user_model: UserModel) -> User:
+        return User(
+            user_id=UserId(user_model.user_id),
+            email=Email(user_model.email),
+            password_hash=user_model.password_hash,
+            status=UserStatus(user_model.status),
+            profile=UserProfile(
+                full_name=user_model.full_name,
+                phone=user_model.phone,
+                avatar=user_model.avatar,
+                job_title=user_model.job_title,
+                industry=user_model.industry
+            ),
+            registered_at=user_model.registered_at,
+            last_login_at=user_model.last_login_at
+        )
 ```
 
 ### 5.5 应用服务示例
 
-
-
-```
-\# app/application/services/user\_service.py
-
+```python
+# app/application/services/user_service.py
 from dataclasses import asdict
-
 from typing import Optional
-
 from uuid import uuid4
 
 from app.domain.user.entities import User
-
 from app.domain.user.repositories import UserRepository
-
-from app.domain.user.value\_objects import Email, UserProfile
-
+from app.domain.user.value_objects import Email, UserProfile
 from app.domain.notification.services import NotificationService
-
 from app.core.exceptions import UserAlreadyExistsError, InvalidCredentialsError
+from app.core.security import hash_password, verify_password
+from app.application.commands.user_commands import RegisterUserCommand, UpdateUserCommand
 
-from app.core.security import hash\_password, verify\_password
-
-from app.application.commands.user\_commands import RegisterUserCommand, UpdateUserCommand
 
 class UserService:
-
-&#x20;   def \_\_init\_\_(
-
-&#x20;       self,&#x20;
-
-&#x20;       user\_repository: UserRepository,
-
-&#x20;       notification\_service: NotificationService
-
-&#x20;   ):
-
-&#x20;       self.user\_repository = user\_repository
-
-&#x20;       self.notification\_service = notification\_service
-
-&#x20;   def register\_user(self, command: RegisterUserCommand) -> User:
-
-&#x20;       """注册新用户"""
-
-&#x20;       email = Email(command.email)
-
-&#x20;      &#x20;
-
-&#x20;       # 检查用户是否已存在
-
-&#x20;       existing\_user = self.user\_repository.get\_by\_email(email)
-
-&#x20;       if existing\_user:
-
-&#x20;           raise UserAlreadyExistsError(f"User with email {email} already exists")
-
-&#x20;          &#x20;
-
-&#x20;       # 创建用户
-
-&#x20;       password\_hash = hash\_password(command.password)
-
-&#x20;       profile = UserProfile(
-
-&#x20;           full\_name=command.full\_name,
-
-&#x20;           phone=command.phone
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       user = User.register(
-
-&#x20;           email=email,
-
-&#x20;           password\_hash=password\_hash,
-
-&#x20;           profile=profile
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       # 保存用户
-
-&#x20;       self.user\_repository.add(user)
-
-&#x20;      &#x20;
-
-&#x20;       # 发送验证邮件
-
-&#x20;       verification\_code = str(uuid4())\[:6]
-
-&#x20;       self.notification\_service.send\_email\_verification(
-
-&#x20;           email=email.value,
-
-&#x20;           user\_id=user.user\_id.value,
-
-&#x20;           code=verification\_code
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       return user
-
-&#x20;   def verify\_email(self, user\_id: str, code: str) -> User:
-
-&#x20;       """验证邮箱"""
-
-&#x20;       user = self.user\_repository.get\_by\_id(UserId(user\_id))
-
-&#x20;       if not user:
-
-&#x20;           raise ValueError(f"User with ID {user\_id} not found")
-
-&#x20;          &#x20;
-
-&#x20;       # 验证验证码 (实际实现中应从缓存或数据库获取预存的验证码)
-
-&#x20;       if not self.notification\_service.verify\_verification\_code(user\_id, code):
-
-&#x20;           raise ValueError("Invalid or expired verification code")
-
-&#x20;          &#x20;
-
-&#x20;       # 更新用户状态
-
-&#x20;       verified\_user = user.verify\_email()
-
-&#x20;       self.user\_repository.update(verified\_user)
-
-&#x20;      &#x20;
-
-&#x20;       return verified\_user
-
-&#x20;   def authenticate\_user(self, email: str, password: str) -> User:
-
-&#x20;       """用户认证"""
-
-&#x20;       user = self.user\_repository.get\_by\_email(Email(email))
-
-&#x20;       if not user:
-
-&#x20;           raise InvalidCredentialsError("Invalid email or password")
-
-&#x20;          &#x20;
-
-&#x20;       if not verify\_password(password, user.password\_hash):
-
-&#x20;           raise InvalidCredentialsError("Invalid email or password")
-
-&#x20;          &#x20;
-
-&#x20;       # 更新最后登录时间
-
-&#x20;       updated\_user = user.update\_last\_login()
-
-&#x20;       self.user\_repository.update(updated\_user)
-
-&#x20;      &#x20;
-
-&#x20;       return updated\_user
-
-&#x20;   def update\_user\_profile(self, user\_id: str, command: UpdateUserCommand) -> User:
-
-&#x20;       """更新用户资料"""
-
-&#x20;       user = self.user\_repository.get\_by\_id(UserId(user\_id))
-
-&#x20;       if not user:
-
-&#x20;           raise ValueError(f"User with ID {user\_id} not found")
-
-&#x20;          &#x20;
-
-&#x20;       # 更新用户资料
-
-&#x20;       updated\_profile = user.profile.update(\*\*asdict(command))
-
-&#x20;       updated\_user = user.update\_profile(updated\_profile)
-
-&#x20;       self.user\_repository.update(updated\_user)
-
-&#x20;      &#x20;
-
-&#x20;       return updated\_user
+    def __init__(
+        self, 
+        user_repository: UserRepository,
+        notification_service: NotificationService
+    ):
+        self.user_repository = user_repository
+        self.notification_service = notification_service
+
+    def register_user(self, command: RegisterUserCommand) -> User:
+        """注册新用户"""
+        email = Email(command.email)
+        
+        # 检查用户是否已存在
+        existing_user = self.user_repository.get_by_email(email)
+        if existing_user:
+            raise UserAlreadyExistsError(f"User with email {email} already exists")
+            
+        # 创建用户
+        password_hash = hash_password(command.password)
+        profile = UserProfile(
+            full_name=command.full_name,
+            phone=command.phone
+        )
+        
+        user = User.register(
+            email=email,
+            password_hash=password_hash,
+            profile=profile
+        )
+        
+        # 保存用户
+        self.user_repository.add(user)
+        
+        # 发送验证邮件
+        verification_code = str(uuid4())[:6]
+        self.notification_service.send_email_verification(
+            email=email.value,
+            user_id=user.user_id.value,
+            code=verification_code
+        )
+        
+        return user
+
+    def verify_email(self, user_id: str, code: str) -> User:
+        """验证邮箱"""
+        user = self.user_repository.get_by_id(UserId(user_id))
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+            
+        # 验证验证码 (实际实现中应从缓存或数据库获取预存的验证码)
+        if not self.notification_service.verify_verification_code(user_id, code):
+            raise ValueError("Invalid or expired verification code")
+            
+        # 更新用户状态
+        verified_user = user.verify_email()
+        self.user_repository.update(verified_user)
+        
+        return verified_user
+
+    def authenticate_user(self, email: str, password: str) -> User:
+        """用户认证"""
+        user = self.user_repository.get_by_email(Email(email))
+        if not user:
+            raise InvalidCredentialsError("Invalid email or password")
+            
+        if not verify_password(password, user.password_hash):
+            raise InvalidCredentialsError("Invalid email or password")
+            
+        # 更新最后登录时间
+        updated_user = user.update_last_login()
+        self.user_repository.update(updated_user)
+        
+        return updated_user
+
+    def update_user_profile(self, user_id: str, command: UpdateUserCommand) -> User:
+        """更新用户资料"""
+        user = self.user_repository.get_by_id(UserId(user_id))
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+            
+        # 更新用户资料
+        updated_profile = user.profile.update(**asdict(command))
+        updated_user = user.update_profile(updated_profile)
+        self.user_repository.update(updated_user)
+        
+        return updated_user
 ```
 
 ### 5.6 API 端点示例
-
-
-
-```
-\# app/api/v1/endpoints/users.py
-
+```python
+# app/api/v1/endpoints/users.py
 from fastapi import APIRouter, Depends, HTTPException, status
-
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get\_db, get\_current\_user
-
-from app.api.v1.dto.user\_dto import (
-
-&#x20;   UserRegistrationRequest, UserResponse,&#x20;
-
-&#x20;   UserLoginRequest, TokenResponse,
-
-&#x20;   UserUpdateRequest
-
+from app.api.dependencies import get_db, get_current_user
+from app.api.v1.dto.user_dto import (
+    UserRegistrationRequest, UserResponse, 
+    UserLoginRequest, TokenResponse,
+    UserUpdateRequest
 )
-
-from app.application.services.user\_service import UserService
-
+from app.application.services.user_service import UserService
 from app.domain.user.entities import User
-
-from app.infrastructure.repositories.user\_repository import SqlAlchemyUserRepository
-
-from app.infrastructure.services.email\_service import EmailService
-
-from app.infrastructure.services.notification\_service import NotificationServiceImpl
+from app.infrastructure.repositories.user_repository import SqlAlchemyUserRepository
+from app.infrastructure.services.email_service import EmailService
+from app.infrastructure.services.notification_service import NotificationServiceImpl
 
 router = APIRouter()
 
-def get\_user\_service(db: Session = Depends(get\_db)) -> UserService:
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    user_repository = SqlAlchemyUserRepository(db)
+    email_service = EmailService()
+    notification_service = NotificationServiceImpl(email_service, db)
+    return UserService(user_repository, notification_service)
 
-&#x20;   user\_repository = SqlAlchemyUserRepository(db)
-
-&#x20;   email\_service = EmailService()
-
-&#x20;   notification\_service = NotificationServiceImpl(email\_service, db)
-
-&#x20;   return UserService(user\_repository, notification\_service)
-
-@router.post("/register", response\_model=UserResponse, status\_code=status.HTTP\_201\_CREATED)
-
-def register\_user(
-
-&#x20;   user\_data: UserRegistrationRequest,
-
-&#x20;   user\_service: UserService = Depends(get\_user\_service)
-
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def register_user(
+    user_data: UserRegistrationRequest,
+    user_service: UserService = Depends(get_user_service)
 ):
+    try:
+        user = user_service.register_user(user_data.to_command())
+        return UserResponse.from_domain(user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
-&#x20;   try:
-
-&#x20;       user = user\_service.register\_user(user\_data.to\_command())
-
-&#x20;       return UserResponse.from\_domain(user)
-
-&#x20;   except Exception as e:
-
-&#x20;       raise HTTPException(
-
-&#x20;           status\_code=status.HTTP\_400\_BAD\_REQUEST,
-
-&#x20;           detail=str(e)
-
-&#x20;       )
-
-@router.post("/verify-email", response\_model=UserResponse)
-
-def verify\_email(
-
-&#x20;   user\_id: str,
-
-&#x20;   code: str,
-
-&#x20;   user\_service: UserService = Depends(get\_user\_service)
-
+@router.post("/verify-email", response_model=UserResponse)
+def verify_email(
+    user_id: str,
+    code: str,
+    user_service: UserService = Depends(get_user_service)
 ):
+    try:
+        user = user_service.verify_email(user_id, code)
+        return UserResponse.from_domain(user)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
-&#x20;   try:
-
-&#x20;       user = user\_service.verify\_email(user\_id, code)
-
-&#x20;       return UserResponse.from\_domain(user)
-
-&#x20;   except ValueError as e:
-
-&#x20;       raise HTTPException(
-
-&#x20;           status\_code=status.HTTP\_400\_BAD\_REQUEST,
-
-&#x20;           detail=str(e)
-
-&#x20;       )
-
-@router.post("/login", response\_model=TokenResponse)
-
+@router.post("/login", response_model=TokenResponse)
 def login(
-
-&#x20;   login\_data: UserLoginRequest,
-
-&#x20;   user\_service: UserService = Depends(get\_user\_service)
-
+    login_data: UserLoginRequest,
+    user_service: UserService = Depends(get_user_service)
 ):
+    try:
+        user = user_service.authenticate_user(login_data.email, login_data.password)
+        # 生成JWT令牌 (实际实现中应使用安全的令牌生成逻辑)
+        token = create_access_token(user.user_id.value)
+        return TokenResponse(access_token=token, token_type="bearer")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
-&#x20;   try:
+@router.get("/me", response_model=UserResponse)
+def get_current_user_profile(current_user: User = Depends(get_current_user)):
+    return UserResponse.from_domain(current_user)
 
-&#x20;       user = user\_service.authenticate\_user(login\_data.email, login\_data.password)
-
-&#x20;       # 生成JWT令牌 (实际实现中应使用安全的令牌生成逻辑)
-
-&#x20;       token = create\_access\_token(user.user\_id.value)
-
-&#x20;       return TokenResponse(access\_token=token, token\_type="bearer")
-
-&#x20;   except Exception as e:
-
-&#x20;       raise HTTPException(
-
-&#x20;           status\_code=status.HTTP\_401\_UNAUTHORIZED,
-
-&#x20;           detail=str(e),
-
-&#x20;           headers={"WWW-Authenticate": "Bearer"}
-
-&#x20;       )
-
-@router.get("/me", response\_model=UserResponse)
-
-def get\_current\_user\_profile(current\_user: User = Depends(get\_current\_user)):
-
-&#x20;   return UserResponse.from\_domain(current\_user)
-
-@router.put("/me", response\_model=UserResponse)
-
-def update\_user\_profile(
-
-&#x20;   update\_data: UserUpdateRequest,
-
-&#x20;   current\_user: User = Depends(get\_current\_user),
-
-&#x20;   user\_service: UserService = Depends(get\_user\_service)
-
+@router.put("/me", response_model=UserResponse)
+def update_user_profile(
+    update_data: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service)
 ):
-
-&#x20;   try:
-
-&#x20;       updated\_user = user\_service.update\_user\_profile(
-
-&#x20;           current\_user.user\_id.value,
-
-&#x20;           update\_data.to\_command()
-
-&#x20;       )
-
-&#x20;       return UserResponse.from\_domain(updated\_user)
-
-&#x20;   except Exception as e:
-
-&#x20;       raise HTTPException(
-
-&#x20;           status\_code=status.HTTP\_400\_BAD\_REQUEST,
-
-&#x20;           detail=str(e)
-
-&#x20;       )
+    try:
+        updated_user = user_service.update_user_profile(
+            current_user.user_id.value,
+            update_data.to_command()
+        )
+        return UserResponse.from_domain(updated_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 ```
 
 ## 6. 总结与扩展建议
@@ -1238,5 +888,3 @@ def update\_user\_profile(
 5. **监控与可观测性**：集成完善的监控和日志系统，提高系统可观测性
 
 通过这套架构设计，职麦 AI 系统能够更好地应对业务复杂度，同时保持良好的可扩展性和可维护性，为未来的功能迭代和业务增长奠定坚实基础。
-
-> （注：文档部分内容可能由 AI 生成）
