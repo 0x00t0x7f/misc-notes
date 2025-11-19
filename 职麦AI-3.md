@@ -435,647 +435,343 @@ jobwheat\_ai/
 ### 9.2 核心代码示例
 
 #### 9.2.1 领域模型（用户聚合）
-
-
-
-```
-\# app/domain/models/user.py
-
+```python
+# app/domain/models/user.py
 from dataclasses import dataclass
-
 from datetime import datetime
-
 from uuid import UUID, uuid4
 
 @dataclass(frozen=True)
-
 class Email:
-
-&#x20;   value: str
-
-&#x20;  &#x20;
-
-&#x20;   def \_\_post\_init\_\_(self):
-
-&#x20;       if "@" not in self.value:
-
-&#x20;           raise ValueError("Invalid email address")
+    value: str
+    
+    def __post_init__(self):
+        if "@" not in self.value:
+            raise ValueError("Invalid email address")
 
 @dataclass(frozen=True)
-
 class UserId:
-
-&#x20;   value: UUID = uuid4()
+    value: UUID = uuid4()
 
 @dataclass
-
 class UserProfile:
-
-&#x20;   full\_name: str
-
-&#x20;   phone: str | None = None
-
-&#x20;   title: str | None = None
-
-&#x20;   bio: str | None = None
+    full_name: str
+    phone: str | None = None
+    title: str | None = None
+    bio: str | None = None
 
 @dataclass
-
 class User:
-
-&#x20;   id: UserId
-
-&#x20;   email: Email
-
-&#x20;   hashed\_password: str
-
-&#x20;   is\_active: bool = True
-
-&#x20;   is\_verified: bool = False
-
-&#x20;   profile: UserProfile | None = None
-
-&#x20;   created\_at: datetime = datetime.now()
-
-&#x20;   updated\_at: datetime = datetime.now()
-
-&#x20;  &#x20;
-
-&#x20;   def verify(self) -> None:
-
-&#x20;       self.is\_verified = True
-
-&#x20;       self.updated\_at = datetime.now()
-
-&#x20;  &#x20;
-
-&#x20;   def update\_profile(self, profile: UserProfile) -> None:
-
-&#x20;       self.profile = profile
-
-&#x20;       self.updated\_at = datetime.now()
+    id: UserId
+    email: Email
+    hashed_password: str
+    is_active: bool = True
+    is_verified: bool = False
+    profile: UserProfile | None = None
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
+    
+    def verify(self) -> None:
+        self.is_verified = True
+        self.updated_at = datetime.now()
+    
+    def update_profile(self, profile: UserProfile) -> None:
+        self.profile = profile
+        self.updated_at = datetime.now()
 ```
 
 #### 9.2.2 领域事件
-
-
-
-```
-\# app/domain/events/user.py
-
+```python
+# app/domain/events/user.py
 from dataclasses import dataclass
-
 from datetime import datetime
-
 from uuid import UUID
 
 @dataclass
-
 class UserRegisteredEvent:
-
-&#x20;   user\_id: UUID
-
-&#x20;   email: str
-
-&#x20;   occurred\_at: datetime = datetime.now()
+    user_id: UUID
+    email: str
+    occurred_at: datetime = datetime.now()
 ```
 
 #### 9.2.3 仓储接口
-
-
-
-```
-\# app/domain/repositories/user\_repository.py
-
+```python
+# app/domain/repositories/user_repository.py
 from abc import ABC, abstractmethod
-
 from uuid import UUID
-
 from app.domain.models.user import User, UserId, Email
 
 class UserRepository(ABC):
-
-&#x20;   @abstractmethod
-
-&#x20;   def get\_by\_id(self, user\_id: UserId) -> User | None:
-
-&#x20;       pass
-
-&#x20;  &#x20;
-
-&#x20;   @abstractmethod
-
-&#x20;   def get\_by\_email(self, email: Email) -> User | None:
-
-&#x20;       pass
-
-&#x20;  &#x20;
-
-&#x20;   @abstractmethod
-
-&#x20;   def add(self, user: User) -> None:
-
-&#x20;       pass
-
-&#x20;  &#x20;
-
-&#x20;   @abstractmethod
-
-&#x20;   def update(self, user: User) -> None:
-
-&#x20;       pass
+    @abstractmethod
+    def get_by_id(self, user_id: UserId) -> User | None:
+        pass
+    
+    @abstractmethod
+    def get_by_email(self, email: Email) -> User | None:
+        pass
+    
+    @abstractmethod
+    def add(self, user: User) -> None:
+        pass
+    
+    @abstractmethod
+    def update(self, user: User) -> None:
+        pass
 ```
 
 #### 9.2.4 仓储实现
-
-
-
-```
-\# app/infrastructure/repositories/user\_repository.py
-
+```python
+# app/infrastructure/repositories/user_repository.py
 from sqlalchemy import select, update
-
 from sqlalchemy.orm import Session
-
 from app.domain.models.user import User, UserId, Email, UserProfile
-
-from app.domain.repositories.user\_repository import UserRepository
-
+from app.domain.repositories.user_repository import UserRepository
 from app.infrastructure.database.models import User as DBUser
-
 from app.infrastructure.database.models import UserProfile as DBUserProfile
 
 class SqlAlchemyUserRepository(UserRepository):
-
-&#x20;   def \_\_init\_\_(self, session: Session):
-
-&#x20;       self.session = session
-
-&#x20;  &#x20;
-
-&#x20;   def get\_by\_id(self, user\_id: UserId) -> User | None:
-
-&#x20;       db\_user = self.session.execute(
-
-&#x20;           select(DBUser).where(DBUser.id == user\_id.value)
-
-&#x20;       ).scalar\_one\_or\_none()
-
-&#x20;      &#x20;
-
-&#x20;       if not db\_user:
-
-&#x20;           return None
-
-&#x20;          &#x20;
-
-&#x20;       return self.\_map\_to\_domain(db\_user)
-
-&#x20;  &#x20;
-
-&#x20;   def get\_by\_email(self, email: Email) -> User | None:
-
-&#x20;       db\_user = self.session.execute(
-
-&#x20;           select(DBUser).where(DBUser.email == email.value)
-
-&#x20;       ).scalar\_one\_or\_none()
-
-&#x20;      &#x20;
-
-&#x20;       if not db\_user:
-
-&#x20;           return None
-
-&#x20;          &#x20;
-
-&#x20;       return self.\_map\_to\_domain(db\_user)
-
-&#x20;  &#x20;
-
-&#x20;   def add(self, user: User) -> None:
-
-&#x20;       db\_user = DBUser(
-
-&#x20;           id=user.id.value,
-
-&#x20;           email=user.email.value,
-
-&#x20;           hashed\_password=user.hashed\_password,
-
-&#x20;           is\_active=user.is\_active,
-
-&#x20;           is\_verified=user.is\_verified,
-
-&#x20;           created\_at=user.created\_at,
-
-&#x20;           updated\_at=user.updated\_at
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       if user.profile:
-
-&#x20;           db\_user.profile = DBUserProfile(
-
-&#x20;               user\_id=user.id.value,
-
-&#x20;               full\_name=user.profile.full\_name,
-
-&#x20;               phone=user.profile.phone,
-
-&#x20;               title=user.profile.title,
-
-&#x20;               bio=user.profile.bio
-
-&#x20;           )
-
-&#x20;          &#x20;
-
-&#x20;       self.session.add(db\_user)
-
-&#x20;       self.session.commit()
-
-&#x20;  &#x20;
-
-&#x20;   def update(self, user: User) -> None:
-
-&#x20;       self.session.execute(
-
-&#x20;           update(DBUser)
-
-&#x20;           .where(DBUser.id == user.id.value)
-
-&#x20;           .values(
-
-&#x20;               email=user.email.value,
-
-&#x20;               hashed\_password=user.hashed\_password,
-
-&#x20;               is\_active=user.is\_active,
-
-&#x20;               is\_verified=user.is\_verified,
-
-&#x20;               updated\_at=user.updated\_at
-
-&#x20;           )
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       \# 更新用户资料
-
-&#x20;       if user.profile:
-
-&#x20;           \# 简化示例，实际可能需要upsert操作
-
-&#x20;           self.session.execute(
-
-&#x20;               update(DBUserProfile)
-
-&#x20;               .where(DBUserProfile.user\_id == user.id.value)
-
-&#x20;               .values(
-
-&#x20;                   full\_name=user.profile.full\_name,
-
-&#x20;                   phone=user.profile.phone,
-
-&#x20;                   title=user.profile.title,
-
-&#x20;                   bio=user.profile.bio
-
-&#x20;               )
-
-&#x20;           )
-
-&#x20;          &#x20;
-
-&#x20;       self.session.commit()
-
-&#x20;  &#x20;
-
-&#x20;   def \_map\_to\_domain(self, db\_user: DBUser) -> User:
-
-&#x20;       profile = None
-
-&#x20;       if db\_user.profile:
-
-&#x20;           profile = UserProfile(
-
-&#x20;               full\_name=db\_user.profile.full\_name,
-
-&#x20;               phone=db\_user.profile.phone,
-
-&#x20;               title=db\_user.profile.title,
-
-&#x20;               bio=db\_user.profile.bio
-
-&#x20;           )
-
-&#x20;          &#x20;
-
-&#x20;       return User(
-
-&#x20;           id=UserId(db\_user.id),
-
-&#x20;           email=Email(db\_user.email),
-
-&#x20;           hashed\_password=db\_user.hashed\_password,
-
-&#x20;           is\_active=db\_user.is\_active,
-
-&#x20;           is\_verified=db\_user.is\_verified,
-
-&#x20;           profile=profile,
-
-&#x20;           created\_at=db\_user.created\_at,
-
-&#x20;           updated\_at=db\_user.updated\_at
-
-&#x20;       )
+    def __init__(self, session: Session):
+        self.session = session
+    
+    def get_by_id(self, user_id: UserId) -> User | None:
+        db_user = self.session.execute(
+            select(DBUser).where(DBUser.id == user_id.value)
+        ).scalar_one_or_none()
+        
+        if not db_user:
+            return None
+            
+        return self._map_to_domain(db_user)
+    
+    def get_by_email(self, email: Email) -> User | None:
+        db_user = self.session.execute(
+            select(DBUser).where(DBUser.email == email.value)
+        ).scalar_one_or_none()
+        
+        if not db_user:
+            return None
+            
+        return self._map_to_domain(db_user)
+    
+    def add(self, user: User) -> None:
+        db_user = DBUser(
+            id=user.id.value,
+            email=user.email.value,
+            hashed_password=user.hashed_password,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            created_at=user.created_at,
+            updated_at=user.updated_at
+        )
+        
+        if user.profile:
+            db_user.profile = DBUserProfile(
+                user_id=user.id.value,
+                full_name=user.profile.full_name,
+                phone=user.profile.phone,
+                title=user.profile.title,
+                bio=user.profile.bio
+            )
+            
+        self.session.add(db_user)
+        self.session.commit()
+    
+    def update(self, user: User) -> None:
+        self.session.execute(
+            update(DBUser)
+            .where(DBUser.id == user.id.value)
+            .values(
+                email=user.email.value,
+                hashed_password=user.hashed_password,
+                is_active=user.is_active,
+                is_verified=user.is_verified,
+                updated_at=user.updated_at
+            )
+        )
+        
+        # 更新用户资料
+        if user.profile:
+            # 简化示例，实际可能需要upsert操作
+            self.session.execute(
+                update(DBUserProfile)
+                .where(DBUserProfile.user_id == user.id.value)
+                .values(
+                    full_name=user.profile.full_name,
+                    phone=user.profile.phone,
+                    title=user.profile.title,
+                    bio=user.profile.bio
+                )
+            )
+            
+        self.session.commit()
+    
+    def _map_to_domain(self, db_user: DBUser) -> User:
+        profile = None
+        if db_user.profile:
+            profile = UserProfile(
+                full_name=db_user.profile.full_name,
+                phone=db_user.profile.phone,
+                title=db_user.profile.title,
+                bio=db_user.profile.bio
+            )
+            
+        return User(
+            id=UserId(db_user.id),
+            email=Email(db_user.email),
+            hashed_password=db_user.hashed_password,
+            is_active=db_user.is_active,
+            is_verified=db_user.is_verified,
+            profile=profile,
+            created_at=db_user.created_at,
+            updated_at=db_user.updated_at
+        )
 ```
 
 #### 9.2.5 应用服务
-
-
-
-```
-\# app/application/services/user\_service.py
-
+```python
+# app/application/services/user_service.py
 from uuid import UUID
-
 from app.domain.models.user import User, UserId, Email, UserProfile
-
-from app.domain.repositories.user\_repository import UserRepository
-
+from app.domain.repositories.user_repository import UserRepository
 from app.domain.events.user import UserRegisteredEvent
-
-from app.infrastructure.services.email\_service import EmailService
-
+from app.infrastructure.services.email_service import EmailService
 from app.application.events.publisher import EventPublisher
 
 class UserService:
-
-&#x20;   def \_\_init\_\_(
-
-&#x20;       self,&#x20;
-
-&#x20;       user\_repository: UserRepository,
-
-&#x20;       email\_service: EmailService,
-
-&#x20;       event\_publisher: EventPublisher
-
-&#x20;   ):
-
-&#x20;       self.user\_repository = user\_repository
-
-&#x20;       self.email\_service = email\_service
-
-&#x20;       self.event\_publisher = event\_publisher
-
-&#x20;  &#x20;
-
-&#x20;   async def register\_user(
-
-&#x20;       self,&#x20;
-
-&#x20;       email: str,&#x20;
-
-&#x20;       password: str,
-
-&#x20;       full\_name: str | None = None
-
-&#x20;   ) -> User:
-
-&#x20;       \# 检查邮箱是否已注册
-
-&#x20;       existing\_user = self.user\_repository.get\_by\_email(Email(email))
-
-&#x20;       if existing\_user:
-
-&#x20;           raise ValueError("Email already registered")
-
-&#x20;      &#x20;
-
-&#x20;       \# 创建用户
-
-&#x20;       user\_id = UserId()
-
-&#x20;       hashed\_password = self.\_hash\_password(password)
-
-&#x20;      &#x20;
-
-&#x20;       profile = None
-
-&#x20;       if full\_name:
-
-&#x20;           profile = UserProfile(full\_name=full\_name)
-
-&#x20;      &#x20;
-
-&#x20;       user = User(
-
-&#x20;           id=user\_id,
-
-&#x20;           email=Email(email),
-
-&#x20;           hashed\_password=hashed\_password,
-
-&#x20;           profile=profile,
-
-&#x20;           is\_verified=False
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       \# 保存用户
-
-&#x20;       self.user\_repository.add(user)
-
-&#x20;      &#x20;
-
-&#x20;       \# 发送验证邮件
-
-&#x20;       verification\_code = self.\_generate\_verification\_code()
-
-&#x20;       await self.email\_service.send\_verification\_email(
-
-&#x20;           email=email,
-
-&#x20;           code=verification\_code
-
-&#x20;       )
-
-&#x20;      &#x20;
-
-&#x20;       \# 发布用户注册事件
-
-&#x20;       self.event\_publisher.publish(UserRegisteredEvent(
-
-&#x20;           user\_id=user\_id.value,
-
-&#x20;           email=email
-
-&#x20;       ))
-
-&#x20;      &#x20;
-
-&#x20;       return user
-
-&#x20;  &#x20;
-
-&#x20;   async def verify\_user(self, user\_id: UUID, code: str) -> None:
-
-&#x20;       \# 验证逻辑实现...
-
-&#x20;       pass
-
-&#x20;  &#x20;
-
-&#x20;   def update\_user\_profile(
-
-&#x20;       self,&#x20;
-
-&#x20;       user\_id: UUID,&#x20;
-
-&#x20;       profile: UserProfile
-
-&#x20;   ) -> User:
-
-&#x20;       user = self.user\_repository.get\_by\_id(UserId(user\_id))
-
-&#x20;       if not user:
-
-&#x20;           raise ValueError("User not found")
-
-&#x20;      &#x20;
-
-&#x20;       user.update\_profile(profile)
-
-&#x20;       self.user\_repository.update(user)
-
-&#x20;       return user
-
-&#x20;  &#x20;
-
-&#x20;   def \_hash\_password(self, password: str) -> str:
-
-&#x20;       \# 密码哈希实现...
-
-&#x20;       return password  # 简化示例
-
-&#x20;  &#x20;
-
-&#x20;   def \_generate\_verification\_code(self) -> str:
-
-&#x20;       \# 生成验证码实现...
-
-&#x20;       return "123456"  # 简化示例
+    def __init__(
+        self, 
+        user_repository: UserRepository,
+        email_service: EmailService,
+        event_publisher: EventPublisher
+    ):
+        self.user_repository = user_repository
+        self.email_service = email_service
+        self.event_publisher = event_publisher
+    
+    async def register_user(
+        self, 
+        email: str, 
+        password: str,
+        full_name: str | None = None
+    ) -> User:
+        # 检查邮箱是否已注册
+        existing_user = self.user_repository.get_by_email(Email(email))
+        if existing_user:
+            raise ValueError("Email already registered")
+        
+        # 创建用户
+        user_id = UserId()
+        hashed_password = self._hash_password(password)
+        
+        profile = None
+        if full_name:
+            profile = UserProfile(full_name=full_name)
+        
+        user = User(
+            id=user_id,
+            email=Email(email),
+            hashed_password=hashed_password,
+            profile=profile,
+            is_verified=False
+        )
+        
+        # 保存用户
+        self.user_repository.add(user)
+        
+        # 发送验证邮件
+        verification_code = self._generate_verification_code()
+        await self.email_service.send_verification_email(
+            email=email,
+            code=verification_code
+        )
+        
+        # 发布用户注册事件
+        self.event_publisher.publish(UserRegisteredEvent(
+            user_id=user_id.value,
+            email=email
+        ))
+        
+        return user
+    
+    async def verify_user(self, user_id: UUID, code: str) -> None:
+        # 验证逻辑实现...
+        pass
+    
+    def update_user_profile(
+        self, 
+        user_id: UUID, 
+        profile: UserProfile
+    ) -> User:
+        user = self.user_repository.get_by_id(UserId(user_id))
+        if not user:
+            raise ValueError("User not found")
+        
+        user.update_profile(profile)
+        self.user_repository.update(user)
+        return user
+    
+    def _hash_password(self, password: str) -> str:
+        # 密码哈希实现...
+        return password  # 简化示例
+    
+    def _generate_verification_code(self) -> str:
+        # 生成验证码实现...
+        return "123456"  # 简化示例
 ```
 
 #### 9.2.6 API 接口
-
-
-
-```
-\# app/api/v1/endpoints/users.py
-
+```python
+# app/api/v1/endpoints/users.py
 from fastapi import APIRouter, Depends, HTTPException
-
 from sqlalchemy.orm import Session
-
 from app.api.v1.schemas.user import UserCreate, UserResponse, UserProfileUpdate
-
-from app.application.services.user\_service import UserService
-
-from app.infrastructure.repositories.user\_repository import SqlAlchemyUserRepository
-
-from app.infrastructure.services.email\_service import EmailService
-
+from app.application.services.user_service import UserService
+from app.infrastructure.repositories.user_repository import SqlAlchemyUserRepository
+from app.infrastructure.services.email_service import EmailService
 from app.application.events.publisher import EventPublisher
-
-from app.infrastructure.database.session import get\_db
-
-from app.api.v1.deps import get\_current\_user
+from app.infrastructure.database.session import get_db
+from app.api.v1.deps import get_current_user
 
 router = APIRouter()
 
-def get\_user\_service(db: Session = Depends(get\_db)) -> UserService:
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    return UserService(
+        user_repository=SqlAlchemyUserRepository(db),
+        email_service=EmailService(),
+        event_publisher=EventPublisher()
+    )
 
-&#x20;   return UserService(
-
-&#x20;       user\_repository=SqlAlchemyUserRepository(db),
-
-&#x20;       email\_service=EmailService(),
-
-&#x20;       event\_publisher=EventPublisher()
-
-&#x20;   )
-
-@router.post("/register", response\_model=UserResponse)
-
-async def register\_user(
-
-&#x20;   user\_create: UserCreate,
-
-&#x20;   user\_service: UserService = Depends(get\_user\_service)
-
+@router.post("/register", response_model=UserResponse)
+async def register_user(
+    user_create: UserCreate,
+    user_service: UserService = Depends(get_user_service)
 ):
+    try:
+        user = await user_service.register_user(
+            email=user_create.email,
+            password=user_create.password,
+            full_name=user_create.full_name
+        )
+        return user
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-&#x20;   try:
-
-&#x20;       user = await user\_service.register\_user(
-
-&#x20;           email=user\_create.email,
-
-&#x20;           password=user\_create.password,
-
-&#x20;           full\_name=user\_create.full\_name
-
-&#x20;       )
-
-&#x20;       return user
-
-&#x20;   except ValueError as e:
-
-&#x20;       raise HTTPException(status\_code=400, detail=str(e))
-
-@router.put("/profile", response\_model=UserResponse)
-
-def update\_profile(
-
-&#x20;   profile\_update: UserProfileUpdate,
-
-&#x20;   current\_user\_id: str = Depends(get\_current\_user),
-
-&#x20;   user\_service: UserService = Depends(get\_user\_service)
-
+@router.put("/profile", response_model=UserResponse)
+def update_profile(
+    profile_update: UserProfileUpdate,
+    current_user_id: str = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service)
 ):
-
-&#x20;   profile = UserProfile(
-
-&#x20;       full\_name=profile\_update.full\_name,
-
-&#x20;       phone=profile\_update.phone,
-
-&#x20;       title=profile\_update.title,
-
-&#x20;       bio=profile\_update.bio
-
-&#x20;   )
-
-&#x20;   return user\_service.update\_user\_profile(
-
-&#x20;       user\_id=current\_user\_id,
-
-&#x20;       profile=profile
-
-&#x20;   )
+    profile = UserProfile(
+        full_name=profile_update.full_name,
+        phone=profile_update.phone,
+        title=profile_update.title,
+        bio=profile_update.bio
+    )
+    return user_service.update_user_profile(
+        user_id=current_user_id,
+        profile=profile
+    )
 ```
 
 ## 10. 总结与扩展建议
