@@ -604,7 +604,63 @@ uvicorn main:app --reload
 + 聚合 = 服装区里的 “一套穿搭（衣服 + 裤子 + 鞋子）”（强关联，买一套要一起拿）
 + 聚合根 = 这套穿搭的 “导购”（要试穿、购买只能找导购，不能直接拿衣服）
 
+## DDD项目结构示例
+
+application/  # 应用层
+├── services/  # 应用服务，处理用户的请求并协调领域服务
+│   ├── order_service.py
+│   └── user_service.py
+├── commands/  # 定义命令处理器， 处理用户命令请求
+│   ├── create_order_command.py
+│   └── update_product_command.py
+└── queries/  # 定义查询处理器，处理用户查询请求
+    ├── get_order_query.py
+    └── list_products_query.py
+
+core/  # 核心领域层
+├── entities/  # 业务实体
+│   ├── order.py
+│   ├── product.py
+│   └── user.py
+├── value_objects/  # 值对象
+│   ├── money.py
+│   └── address.py
+├── domain_services/  # 领域服务
+│   ├── order_service.py
+│   └── inventory_service.py
+└── repositories/  # 仓库接口，用于数据持久化
+    ├── order_repository.py
+    └── product_repository.py
+    
+infrastructure/  # 基础设施层
+├── database/
+│   ├── models/  # ORM模型
+│   │   ├── order_model.py
+│   │   └── product_model.py
+│   ├── repositories/  # 仓库的具体实现  如 xxxImpl
+│   │   ├── order_repository_impl.py
+│   │   └── product_repository_impl.py
+│   └── db_config.py  # 数据库配置
+├── logging/
+│   └── logger.py
+├── external_apis/  # 外部API客户端，如支付网关、通知服务
+│   ├── payment_gateway.py
+│   └── notification_service.py
+└── cache/  # 缓存实现
+    └── redis_cache.py
+
+docs/
+├── architecture.md
+├── domain_model.md
+└── api_reference.md
+
+# .env
+DB_NAME=my_project
+DB_USER=root
+DB_PASSWORD=secret
+
 # 相关资料
 + https://www.cnblogs.com/dennyzhangdd/p/14376904.html
 + https://www.cnblogs.com/davenkin/p/ddd-introduction.html
 + https://blog.csdn.net/fsfjdtpzus/article/details/144009232
++ https://www.cnblogs.com/letjs/articles/18790630
