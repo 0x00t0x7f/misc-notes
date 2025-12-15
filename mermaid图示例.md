@@ -95,3 +95,52 @@ graph TD
     style P_EVT fill:#fff0f0,stroke:#f5222d,stroke-dasharray:5,5
     style I_EVT fill:#fff0f0,stroke:#f5222d,stroke-dasharray:5,5
 ```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 用户（Client）
+    participant B as 大模型（LLM）
+    participant C as 外部工具（API）
+
+    %% 可以直接用别名替代
+    Note left of A: 预定义函数
+    Note over A, C: 函数调用示例
+    loop 获取天气函数调用序列图
+        Note right of A: LLM生成指令
+        A -->>+ B: 今天北京天气如何?
+        B -->>- A: 返回需要调用的函数信息 {"function":"get_weather", "city":"北京"}
+        rect rgb(240, 255, 255)
+        A -->> C: 执行函数 get_weather("北京")
+        activate C
+        C -->> A: 返回函数执行结果 {"temp":"25°C", "condition":"晴"}
+        deactivate C
+        end
+        A -->>+ B: 将函数结果发送给模型
+        B -->>- A: 北京今天晴天，气温25摄氏度
+    end
+    Note over A,C: 以下是一些语法示例
+    Note right of A: 背景高亮&并行项
+    rect rgb(255, 235, 205)
+    par A to B
+        A -->> B: xxx 
+    and A to C
+        A -->> C: xxx
+    end
+    end
+    B ->> B: 自循环
+    
+    %% 替换项和可选项 alt opt
+    %% 替换项 alt标识在框内选择一种可能发生的情况
+    %% 可选项 opt表示一种可能发生的情况
+    alt 咳嗽
+	B ->> A : 我觉得嗓子不太舒服
+	A ->> B: 那你去拍个片子吧
+	else 腹泻
+	B ->> A : 我觉得肚子不太舒服、
+	A ->> B: 那你去拍个片子吧
+	else 耳鸣
+	B ->> A : 我觉得耳朵不太舒服
+	A ->> B: 那你去拍个片子吧
+	end
+```
