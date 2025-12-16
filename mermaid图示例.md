@@ -119,13 +119,21 @@ sequenceDiagram
         A -->>+ B: 将函数结果发送给模型
         B -->>- A: 北京今天晴天，气温25摄氏度
     end
-    Note over A,C: 以下是一些语法示例
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 医生
+    participant B as 患者
+
+    Note over A,B: 以下是一些语法示例
     Note right of A: 背景高亮&并行项
     rect rgb(255, 235, 205)
     par A to B
-        A -->> B: xxx 
-    and A to C
-        A -->> C: xxx
+        A -->> B: 并行1 
+    and A to B
+        A -->> B: 并行2
     end
     end
     B ->> B: 自循环
@@ -142,5 +150,10 @@ sequenceDiagram
 	else 耳鸣
 	B ->> A : 我觉得耳朵不太舒服
 	A ->> B: 那你去拍个片子吧
+	end
+
+	%% opt的用法
+	opt 反正就是拍片子
+	A ->> B: 那就去拍个片子把
 	end
 ```
