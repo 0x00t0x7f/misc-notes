@@ -169,15 +169,15 @@ sequenceDiagram
     Note over A, C: 函数调用示例
     loop 获取天气函数调用序列图
         Note right of A: LLM生成指令
-        A -->>+ B: 今天北京天气如何?
-        B -->>- A: 返回需要调用的函数信息 {"function":"get_weather", "city":"北京"}
+        A -->>+ B: 西安今天天气如何?
+        B -->>- A: 返回需要调用的函数信息 {"function":"get_weather", "city":"西安"}
         rect rgb(240, 255, 255)
-        A -->> C: 执行函数 get_weather("北京")
+        A -->> C: 执行函数 get_weather("西安")
         activate C
         C -->> A: 返回函数执行结果 {"temp":"25°C", "condition":"晴"}
         deactivate C
         end
         A -->>+ B: 将函数结果发送给模型
-        B -->>- A: 北京今天晴天，气温25摄氏度
+        B -->>- A: 西安今天晴天，气温25摄氏度
     end
 ```
