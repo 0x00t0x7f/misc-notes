@@ -240,4 +240,16 @@ OpenAI 称 o系列模型为“规划者”，能够对复杂任务进行更长�
 LLM与外部环境之间操作协议的标准。MCP就是AI大模型的工具协议，一个USB转换器，一个RESTful协议。
 MCP就是AI大模型的工具协议，一个USB转换器，一个RESTful协议
 
+**MCP的基本概念和术语**  
++ host: 一般是一个AI应用软件工具， 比如 Cursor
++ client：MCP的客户端，需要AI应用软件的开发团队创建，和host在一起，用来和MCP SERVER通信的
++ server：MCP服务端，一般由AI工具的提供方来创建并开放
++ protocal: 目前只支持stdio和两种模式
 
+## MCP的运行机制
++ server提供了什么东西给client：server会生成一个docs.json文件，里面包含了server对外暴露的所有信息，server对外暴露3个东西： tools、resources、prompts
+
+##  MCP生态发展情况
+**MCP和A2A关系（协作关系）**  
++ MCP负责以AI大模型为和兴，链接Agent和Tools
++ A2A负责以Agent为核心，支持多个Agent之间互相调用拉起
