@@ -616,7 +616,7 @@ uvicorn main:app --reload
 + 聚合根 = 这套穿搭的 “导购”（要试穿、购买只能找导购，不能直接拿衣服）
 
 ## DDD项目结构示例
-
+```
 application/  # 应用层
 ├── services/  # 应用服务，处理用户的请求并协调领域服务
 │   ├── order_service.py
@@ -669,6 +669,411 @@ docs/
 DB_NAME=my_project
 DB_USER=root
 DB_PASSWORD=secret
+```
+
+# DDD示例项目三：简历解析工具
+
+## 项目目标
+1. 用户注册（邮箱 + 验证码）
+2. 上传简历（PDF/Word）
+3. 后台异步解析简历内容（如姓名、电话、工作经历等）
+4. 用户可刷新查看解析结果
+5. 用户注册成功发送时间异步发送欢迎邮件
+
+## DDD分层架构涉及（六边形架构）
+```
++-------------------------+
+|         API Layer     | ← FastAPI 路由 + Pydantic
++-------------------------+
+            ↓
++-------------------------+
+|       Application Layer | ← 应用服务（Use Case）
++-------------------------+
+            ↓
++-------------------------+
+|      Domain Layer     | ← 核心领域模型 + 领域服务
++-------------------------+
+            ↓
++-------------------------+
+|   Infrastructure Layer | ← 数据库、消息队列、邮件服务
++-------------------------+
+```
+
+## 技术栈
++ FastAPI：异步 Web 框架，支持 OpenAPI/Swagger
++ Pydantic：数据校验与序列化
++ SQLModel / SQLAlchemy：ORM（用于存储用户、简历元数据）
++ RabbitMQ 或 Redis：异步任务队列（解析简历）
++ Celery：分布式任务处理（可选）
++ Nodemailer / SendGrid / SMTP：发送邮件验证码
++ PDFMiner / docx2txt / PyPDF2：简历文件解析
++ Redis：缓存解析结果、验证码（临时）
+
+## 项目目录结构
+```
+resume-parser/
+├── main.py                          # FastAPI 入口
+├── config.py                        # 配置类（数据库、邮件、Redis等）
+│
+├── domain/
+│   ├── entities/                  # 领域实体
+│   │   ├── user.py
+│   │   ├── resume.py
+│   │   └── parsed_resume.py
+│   │
+│   ├── value_objects/           # 值对象（不可变）
+│   │   ├── email.py
+│   │   ├── phone.py
+│   │   └── verification_code.py
+│   │
+│   ├── repositories/              # 领域仓库接口
+│   │   ├── user_repository.py
+│   │   ├── resume_repository.py
+│   │   └── parsed_resume_repository.py
+│   │
+│   ├── services/                  # 领域服务（业务逻辑）
+│   │   ├── user_service.py
+│   │   ├── resume_parser_service.py
+│   │   └── verification_service.py
+│   │
+│   └── events.py                   # 领域事件（如：ResumeParsedEvent）
+│
+├── application/
+│   ├── use_cases/                 # 应用服务（Use Case）
+│   │   ├── register_user_use_case.py
+│   │   ├── upload_resume_use_case.py
+│   │   ├── get_parsed_resume_use_case.py
+│   │   └── verify_email_use_case.py
+│   │
+│   └── dtos/                        # 数据传输对象（DTO）
+│       ├── user_dto.py
+│       ├── resume_dto.py
+│       └── parsed_resume_dto.py
+│
+├── infrastructure/
+│   ├── database/                    # 数据库连接
+│   │   ├── session.py
+│   │   └── models.py
+│   │
+│   ├── messaging/                   # 消息队列（RabbitMQ/Redis）
+│   |   |__ event_publisher.py       # 发布事件
+│   |   |__ event_handler.py         # 处理事件（Celery 任务）
+│   |   |__ __init__.py
+│   │   ├── task_queue.py
+│   │   └── publish_parsed_event.py
+│   │
+│   ├── email/                         # 发送邮件验证码
+│   │   ├── email_service.py
+│   │   └── templates/
+│   │       └── verification.html
+│   │
+│   ├── file_storage/                # 文件存储（本地 / MinIO / S3）
+│   │   └── file_service.py
+│   │
+│   └── parsers/                       # 简历解析器
+│       ├── pdf_parser.py
+│       ├── docx_parser.py
+│       └── resume_parser.py
+│
+├── api/
+│   ├── routes/
+│   │   ├── auth.py                # /auth/register, /auth/verify
+│   │   ├── resume.py              # /resume/upload, /resume/result
+│   │   └── health.py              # /health
+│   │
+│   └── dependencies.py            # 依赖注入（如 DB Session）
+│
+└── tests/
+    ├── unit/
+    └── integration/
+```
+
+## 核心功能实现（代码片段）
+**用户实体（domain/entities/user.py）**  
+```python
+from sqlmodel import SQLModel, Field
+from typing import Optional
+from domain.value_objects.email import Email
+from domain.value_objects.verification_code import VerificationCode
+
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(unique=True)
+    is_verified: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+**定义领域事件（domain/events.py）**  
+```python
+from typing import Optional
+from pydantic import BaseModel
+from datetime import datetime
+
+class DomainEvent(BaseModel):
+    event_id: str
+    occurred_at: datetime
+    event_type: str
+
+class UserRegisteredEvent(DomainEvent):
+    email: str
+    user_id: int
+    event_type: str = "UserRegisteredEvent"
+```
+
+**领域服务中发布事件（domain/services/user_service.py）**  
+```python
+from domain.events import UserRegisteredEvent
+from infrastructure.messaging import event_publisher  # 新增：事件发布器
+
+class UserService:
+    def __init__(self, user_repository, verification_service):
+        self.user_repository = user_repository
+        self.verification_service = verification_service
+
+    async def create_unverified_user(self, email: str) -> User:
+        user = User(email=email, is_verified=False)
+        return await self.user_repository.save(user)
+
+    async def send_verification_code(self, email: str) -> str:
+        code = self.verification_service.generate_code()
+        await self.verification_service.send_code(email, code)
+        return code
+
+    async def confirm_registration(self, email: str, code: str) -> bool:
+        if not await self.verification_service.verify_code(email, code):
+            return False
+
+        user = await self.user_repository.find_by_email(email)
+        user.is_verified = True
+        await self.user_repository.update(user)
+
+        # ✅ 发布领域事件：用户注册成功
+        event = UserRegisteredEvent(
+            event_id=str(uuid.uuid4()),
+            occurred_at=datetime.utcnow(),
+            email=email,
+            user_id=user.id
+        )
+        await event_publisher.publish(event)
+
+        return True
+```
+
+**注册用例（application/use_cases/register_user_use_case.py）**  
+```
+from domain.services.user_service import UserService
+from application.dtos.user_dto import UserDTO
+from application.dtos.verification_dto import VerificationDTO
+
+class RegisterUserUseCase:
+    def __init__(self, user_service: UserService):
+        self.user_service = user_service
+
+    async def execute(self, email: str) -> VerificationDTO:
+        user = await self.user_service.create_unverified_user(email)
+        code = await self.user_service.send_verification_code(user.email)
+        return VerificationDTO(email=email, code=code)
+```
+
+**邮件验证码服务（infrastructure/email/email_service.py）**  
+```python
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from config import settings
+
+class EmailService:
+    def send_verification_email(self, email: str, code: str):
+        msg = MIMEMultipart()
+        msg['From'] = settings.SMTP_SENDER
+        msg['To'] = email
+        msg['Subject'] = "【简历平台】邮箱验证码"
+
+        body = f"""
+        <h2>您好！</h2>
+        <p>您的验证码是：<strong>{code}</strong></p>
+        <p>请在5分钟内完成验证。</p>
+        """
+        msg.attach(MIMEText(body, 'html'))
+
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_SENDER, email, msg.as_string())
+```
+
+**简历上传接口（api/routes/resume.py）**  
+```python
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from application.use_cases.upload_resume_use_case import UploadResumeUseCase
+from application.dtos.resume_dto import ResumeDTO
+
+router = APIRouter()
+
+@router.post("/upload", response_model=ResumeDTO)
+async def upload_resume(file: UploadFile = File(...), use_case: UploadResumeUseCase = Depends()):
+    try:
+        resume_dto = await use_case.execute(file)
+        return resume_dto
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+```
+
+**异步解析简历（infrastructure/parsers/resume_parser.py）**  
+```python
+import pdfplumber
+from docx import Document
+from typing import Dict
+
+class ResumeParser:
+    def parse(self, file_path: str, file_extension: str) -> Dict:
+        if file_extension == ".pdf":
+            return self._parse_pdf(file_path)
+        elif file_extension == ".docx":
+            return self._parse_docx(file_path)
+        else:
+            raise ValueError("Unsupported file type")
+
+    def _parse_pdf(self, file_path: str) -> Dict:
+        with pdfplumber.open(file_path) as pdf:
+            text = ""
+            for page in pdf.pages:
+                text += page.extract_text()
+            # 简单关键词提取（实际应使用 NLP）
+            return {
+                "name": self._extract_name(text),
+                "phone": self._extract_phone(text),
+                "email": self._extract_email(text),
+                "experience": self._extract_experience(text)
+            }
+
+    # 其他辅助方法...
+
+# 使用 celery + redis 异步执行：
+# tasks.py
+from celery import Celery
+from infrastructure.parsers.resume_parser import ResumeParser
+from infrastructure.file_storage.file_service import FileService
+
+app = Celery('resume_tasks', broker='redis://localhost:6379/0')
+
+@app.task
+def parse_resume_task(file_id: str, file_path: str):
+    parser = ResumeParser()
+    result = parser.parse(file_path, ".pdf")
+    
+    # 保存到数据库
+    # ...
+    return result
+```
+
+**事件发布器（infrastructure/messaging/event_publisher.py）**  
+```python
+from typing import List
+from pydantic import BaseModel
+import json
+import uuid
+from celery import Celery
+
+# 使用 Celery 作为事件广播机制（可替换为 RabbitMQ/Kafka）
+app = Celery('event_broker', broker='redis://localhost:6379/0')
+
+class EventPublisher:
+    async def publish(self, event: BaseModel):
+        # 序列化事件
+        event_json = event.model_dump_json()
+        event_id = str(uuid.uuid4())
+
+        # 异步发布到 Celery 任务队列
+        app.send_task(
+            name='handle_domain_event',
+            args=[event_id, event_json],
+            kwargs={}
+        )
+
+event_publisher = EventPublisher()
+```
+
+**事件处理器（infrastructure/messaging/event_handler.py）**  
+```python
+from celery import Celery
+from infrastructure.email.email_service import EmailService
+from domain.events import UserRegisteredEvent
+import json
+
+app = Celery('event_handlers', broker='redis://localhost:6379/0')
+
+@app.task
+def handle_domain_event(event_id: str, event_json: str):
+    try:
+        # 反序列化事件
+        data = json.loads(event_json)
+        event_type = data.get("event_type")
+
+        if event_type == "UserRegisteredEvent":
+            event = UserRegisteredEvent(**data)
+            send_welcome_email(event.email, event.user_id)
+        else:
+            print(f"Unknown event type: {event_type}")
+    except Exception as e:
+        print(f"Error handling domain event: {e}")
+
+def send_welcome_email(email: str, user_id: int):
+    # 发送欢迎邮件
+    email_service = EmailService()
+    subject = "🎉 欢迎注册简历解析平台！"
+    body = f"""
+    <h2>亲爱的用户，您好！</h2>
+    <p>您已成功注册简历解析平台，账号 ID：{user_id}</p>
+    <p>现在可以上传简历，开始智能解析啦！</p>
+    <p>祝您使用愉快！</p>
+    """
+    email_service.send_email(email, subject, body)
+```
+
+## API接口设计（Swagger UI 自动展示）
+```
+方法	路径	功能
+POST	/auth/register	注册用户（邮箱）
+POST	/auth/verify	验证邮箱验证码
+POST	/resume/upload	上传简历（支持 PDF/DOCX）
+GET	/resume/result/{resume_id}	获取解析结果（支持轮询）
+```
+
+## 流程图
+用户注册流程：
+1. 用户提交邮箱 → 注册接口
+2. 生成验证码 → 发送至邮箱
+3. 用户输入验证码 → 验证通过
+4. ✅ 更新用户状态为已验证
+5. ✅ 触发领域事件：UserRegisteredEvent
+6. 🔄 事件被异步消费：处理函数 `handle_domain_event`
+7. 🔔 异步发送欢迎邮件（无需阻塞主流程）
+
+## 部署建议
++ 开发：本地运行 FastAPI + PostgreSQL + Redis + RabbitMQ
++ 生产：
+  - 使用 Docker Compose 管理服务
+  - Nginx 反向代理 + HTTPS
+  - Celery worker 集群处理任务
+  - 使用 SendGrid 或 AWS SES 发送邮件
+
+## 补充：确保事件处理服务启动
+在 main.py 或启动脚本中，确保 Celery worker 启动
+```python
+# 启动 Celery worker 监听事件
+celery -A infrastructure.messaging.event_handler app worker -l info
+```
+## 总结
+项目完整实践了 DDD 分层架构 与 FastAPI 框架 的结合，具备：
++ 清晰的领域边界：分层清晰（领域层、应用层、基础设施层）
++ 业务逻辑集中在领域层
++ 高内聚、低耦合的模块设计
+  - 事件驱动解耦：注册逻辑与发邮件逻辑完全分离
++ 异步任务处理能力
+  - 异步无阻塞：用户注册完成后立刻返回，不影响体验
++ 可扩展、易维护的结构
+  - 可扩展性强：未来可增加“发送短信”、“通知管理员”等处理逻辑
 
 # 相关资料
 + https://www.cnblogs.com/dennyzhangdd/p/14376904.html
