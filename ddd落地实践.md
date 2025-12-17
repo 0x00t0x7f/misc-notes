@@ -671,16 +671,16 @@ DB_USER=root
 DB_PASSWORD=secret
 ```
 
-# DDD示例项目三：简历解析工具
+## DDD示例项目三：简历解析工具
 
-## 项目目标
+### 项目目标
 1. 用户注册（邮箱 + 验证码）
 2. 上传简历（PDF/Word）
 3. 后台异步解析简历内容（如姓名、电话、工作经历等）
 4. 用户可刷新查看解析结果
 5. 用户注册成功发送时间异步发送欢迎邮件
 
-## DDD分层架构涉及（六边形架构）
+### DDD分层架构涉及（六边形架构）
 ```
 +-------------------------+
 |         API Layer     | ← FastAPI 路由 + Pydantic
@@ -699,7 +699,7 @@ DB_PASSWORD=secret
 +-------------------------+
 ```
 
-## 技术栈
+### 技术栈
 + FastAPI：异步 Web 框架，支持 OpenAPI/Swagger
 + Pydantic：数据校验与序列化
 + SQLModel / SQLAlchemy：ORM（用于存储用户、简历元数据）
@@ -709,7 +709,7 @@ DB_PASSWORD=secret
 + PDFMiner / docx2txt / PyPDF2：简历文件解析
 + Redis：缓存解析结果、验证码（临时）
 
-## 项目目录结构
+### 项目目录结构
 ```
 resume-parser/
 ├── main.py                          # FastAPI 入口
@@ -788,7 +788,7 @@ resume-parser/
     └── integration/
 ```
 
-## 核心功能实现（代码片段）
+### 核心功能实现（代码片段）
 **用户实体（domain/entities/user.py）**  
 ```python
 from sqlmodel import SQLModel, Field
@@ -1031,7 +1031,7 @@ def send_welcome_email(email: str, user_id: int):
     email_service.send_email(email, subject, body)
 ```
 
-## API接口设计（Swagger UI 自动展示）
+### API接口设计（Swagger UI 自动展示）
 ```
 方法	路径	功能
 POST	/auth/register	注册用户（邮箱）
@@ -1040,7 +1040,7 @@ POST	/resume/upload	上传简历（支持 PDF/DOCX）
 GET	/resume/result/{resume_id}	获取解析结果（支持轮询）
 ```
 
-## 流程图
+### 流程图
 用户注册流程：
 1. 用户提交邮箱 → 注册接口
 2. 生成验证码 → 发送至邮箱
@@ -1050,7 +1050,7 @@ GET	/resume/result/{resume_id}	获取解析结果（支持轮询）
 6. 🔄 事件被异步消费：处理函数 `handle_domain_event`
 7. 🔔 异步发送欢迎邮件（无需阻塞主流程）
 
-## 部署建议
+### 部署建议
 + 开发：本地运行 FastAPI + PostgreSQL + Redis + RabbitMQ
 + 生产：
   - 使用 Docker Compose 管理服务
@@ -1058,13 +1058,13 @@ GET	/resume/result/{resume_id}	获取解析结果（支持轮询）
   - Celery worker 集群处理任务
   - 使用 SendGrid 或 AWS SES 发送邮件
 
-## 补充：确保事件处理服务启动
+### 补充：确保事件处理服务启动
 在 main.py 或启动脚本中，确保 Celery worker 启动
 ```python
 # 启动 Celery worker 监听事件
 celery -A infrastructure.messaging.event_handler app worker -l info
 ```
-## 总结
+### 总结
 项目完整实践了 DDD 分层架构 与 FastAPI 框架 的结合，具备：
 + 清晰的领域边界：分层清晰（领域层、应用层、基础设施层）
 + 业务逻辑集中在领域层
