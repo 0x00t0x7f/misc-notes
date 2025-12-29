@@ -845,6 +845,86 @@ C4模型作为架构可视化工具，其优缺点主要体现在对架构描述
 **总结**  
 C4 模型的核心价值是 “用最低成本实现架构的有效沟通”，适合中小型项目、快速迭代场景或架构入门阶段；但对于超复杂系统或需深度体现动态 / 非功能性设计的场景，需结合其他模型（如 4+1 视图、UML 动态图）补充使用。
 
+## DDD中的 use case是什么？
+在 DDD（领域驱动设计） 中，Use Case（用例） 是一个非常核心的概念，它不是指“用户操作”这个行为本身，而是指 应用层中处理某个业务场景的完整逻辑单元。
+> Use Case 是一个封装了特定业务流程的应用逻辑单元，它协调领域模型完成一个完整的业务操作。
+
+**举例：文件上传解析**  
+假设你在做一个「简历解析系统」，用户上传一份 PDF 简历，系统要：
+
+1. 保存简历文件
+2. 解析内容（提取姓名、工作经验等）
+3. 存入数据库
+4. 发送“简历已上传”消息给前端
+这个过程就是一个典型的 Use Case：UploadResumeUseCase
+
+**use case的关键特征**  
+|特征|说明|
+|---|---|
+|业务导向|每个 Use Case 都对应一个具体的业务场景（如“注册用户”、“下单”、“审批请假”）|
+|协调者角色|它不直接处理业务逻辑（那是领域服务的事），而是协调多个领域对象完成任务|
+|输入输出清晰|通常有明确的输入 DTO（数据传输对象）和输出 DTO|
+|可复用性高|一个 Use Case 可以被多个 API 路由或界面调用|
+
+**use case的典型结构（python示例）**  
+```python
+# app/application/use_cases/upload_resume_use_case.py
+
+from typing import Optional
+from app.domain.repositories.resume_repository import ResumeRepository
+from app.domain.services.resume_parser_service import ResumeParserService
+from app.infrastructure.messaging.websocket_event_publisher import WebSocketEventPublisher
+from app.application.dtos.resume_dto import ResumeDTO
+from app.application.dtos.upload_dto import UploadDTO
+
+class UploadResumeUseCase:
+    def __init__(
+        self,
+        resume_repository: ResumeRepository,
+        parser_service: ResumeParserService,
+        event_publisher: WebSocketEventPublisher
+    ):
+        self.resume_repository = resume_repository
+        self.parser_service = parser_service
+        self.event_publisher = event_publisher
+
+    def execute(self, upload_dto: UploadDTO) -> ResumeDTO:
+        # 1. 解析简历内容
+        parsed_data = self.parser_service.parse(upload_dto.file)
+
+        # 2. 保存到数据库
+        resume = self.resume_repository.save(parsed_data)
+
+        # 3. 发送通知（例如 WebSocket）
+        self.event_publisher.publish(resume.id, "resume_uploaded")
+
+        # 4. 返回结果 DTO
+        return ResumeDTO.from_domain(resume)
+```
+
+**use case如何被调用？（与DI结合）**  
+在 FastAPI 中，通过依赖注入自动获取 Use Case：
+```python
+@router.post("/upload", response_model=ResumeDTO)
+async def upload_resume(
+    file: UploadFile = File(...),
+    use_case: UploadResumeUseCase = Depends(get_use_case)
+):
+    dto = UploadDTO(file=file)
+    return use_case.execute(dto)
+```
+
+**Use Case vs DDD其他概念**  
+概念	位置	职责	与 Use Case 的关系
+Entity（实体）	领域层	表示核心业务对象（如 Resume）	被 Use Case 操作
+Value Object（值对象）	领域层	不可变的数据对象（如 Email, Address）	作为参数传给 Use Case
+Service（服务）	领域层	处理跨实体的业务逻辑（如 ResumeParserService）	被 Use Case 调用
+Repository（仓库）	领域层	封装数据访问逻辑	被 Use Case 调用
+Use Case（用例）	应用层	协调领域对象完成完整业务流程	是整个业务流程的“导演”
+
+**use case总结**  
+> Use Case 是应用层的“业务指挥官”——它不负责具体的业务逻辑，但负责调度领域对象，让它们协同完成一个完整的业务任务。
+
 ## DDD的最大特点是什么？
 领域模型准确反映了业务语言，而传统微服务数据对象除了简单setter/getter方法外，没有任何业务方法，即失血模型，那么DDD领域模型就是充血模型（业务方法定义在实体对象中）  
 参考链接：[https://www.cnblogs.com/dennyzhangdd/p/14376904.html](https://www.cnblogs.com/dennyzhangdd/p/14376904.html)
