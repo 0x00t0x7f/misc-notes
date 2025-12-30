@@ -926,6 +926,239 @@ async def upload_resume(
 **use case总结**  
 > Use Case 是应用层的“业务指挥官”——它不负责具体的业务逻辑，但负责调度领域对象，让它们协同完成一个完整的业务任务。
 
+## DI是什么？为什么需要 DI？
+在基于 **DDD 分层架构** 的 FastAPI 项目中，**依赖注入（Dependency Injection, DI）** 是实现松耦合、可测试、易扩展的核心机制。
+
+在 DDD 架构中，各层之间存在明确的依赖关系：
+
+```
+API → Application → Domain
+                   ↓
+           Infrastructure
+```
+
+如果没有 DI，你可能会在每一层都手动创建对象，比如：
+
+```python
+# ❌ 非 DI 方式（耦合严重）
+use_case = UploadResumeUseCase(
+    resume_repository=SqlAlchemyResumeRepository(session),
+    parser_service=ResumeParserService(),
+    event_publisher=WebSocketEventPublisher()
+)
+```
+
+这会导致：
+- 测试困难
+- 无法灵活替换实现（如换数据库）
+- 代码重复、维护成本高
+
+---
+
+### DI 的核心思想
+
+> **将对象的创建和使用分离，由一个容器统一管理依赖关系。**
+
+就像一个“工厂”：你告诉它“我需要一个 `UploadResumeUseCase`”，它会自动帮你创建并注入所有依赖项。
+
+---
+
+### 推荐方案：使用 `dependencies` + `inject`（Python + FastAPI）
+
+我们将采用 **FastAPI 内置依赖注入机制** + **`inject` 库（可选，更强大）** 的组合方式。
+
+---
+
+#### 🛠️ 1. 安装依赖
+
+```bash
+pip install fastapi uvicorn python-dotenv inject
+```
+
+> ✅ `inject` 是一个轻量级的依赖注入库，支持类注入、作用域管理、自动绑定等。
+
+---
+
+#### 📁 2. 项目结构（关键部分）
+
+```
+project-ddd-docker/
+├── app/
+│   ├── di/
+│   │   ├── container.py        # DI 容器定义
+│   │   └── bindings.py          # 依赖绑定规则
+│   │
+│   ├── domain/
+│   │   ├── services/
+│   │   │   └── resume_parser_service.py
+│   │   └── repositories/
+│   │       └── resume_repository.py  # 接口
+│   │
+│   ├── application/
+│   │   ├── use_cases/
+│   │   │   └── upload_resume_use_case.py
+│   │   └── dtos/
+│   │       └── resume_dto.py
+│   │
+│   ├── infrastructure/
+│   │   ├── database/
+│   │   │   ├── session.py
+│   │   │   └── models.py
+│   │   ├── repositories/
+│   │   │   └── resume_repository_impl.py  # 实现
+│   │   └── messaging/
+│   │       └── websocket_event_publisher.py
+│   │
+│   └── api/
+│       └── v1/
+│           └── routers/
+│               └── upload.py
+│
+└── main.py
+```
+
+---
+
+#### 🧩 3. 定义接口（抽象层）
+
+##### `app/domain/repositories/resume_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+
+class ResumeRepository(ABC):
+    @abstractmethod
+    def save(self, resume):
+        pass
+
+    @abstractmethod
+    def find_by_id(self, resume_id):
+        pass
+```
+
+---
+
+#### 🔗 4. 实现接口（基础设施层）
+
+##### `app/infrastructure/repositories/resume_repository_impl.py`
+
+```python
+from app.domain.repositories.resume_repository import ResumeRepository
+from app.infrastructure.database.models import ResumeModel
+from sqlalchemy.orm import Session
+
+class SqlAlchemyResumeRepository(ResumeRepository):
+    def __init__(self, db: Session):
+        self.db = db
+
+    def save(self, resume):
+        db_resume = ResumeModel(
+            id=resume.id,
+            content=resume.content,
+            status=resume.status.value
+        )
+        self.db.add(db_resume)
+        self.db.commit()
+        self.db.refresh(db_resume)
+
+    def find_by_id(self, resume_id):
+        return self.db.query(ResumeModel).filter(ResumeModel.id == resume_id).first()
+```
+
+---
+
+#### 📦 5. 定义 DI 容器与绑定规则
+
+##### `app/di/bindings.py`
+
+```python
+from inject import Binder
+
+def bind_dependencies(binder: Binder):
+    # 绑定数据库会话（由 FastAPI 提供）
+    binder.bind(Session, lambda: get_db_session())  # 需实现获取 session 的函数
+
+    # 绑定领域仓库接口 → 实现类
+    binder.bind(
+        "app.domain.repositories.ResumeRepository",
+        "app.infrastructure.repositories.resume_repository_impl.SqlAlchemyResumeRepository"
+    )
+
+    # 绑定领域服务
+    binder.bind(
+        "app.domain.services.ResumeParserService",
+        "app.domain.services.resume_parser_service.ResumeParserService"
+    )
+
+    # 绑定消息发布器
+    binder.bind(
+        "app.infrastructure.messaging.WebSocketEventPublisher",
+        "app.infrastructure.messaging.websocket_event_publisher.WebSocketEventPublisher"
+    )
+```
+
+---
+
+#### 🔄 6. 创建 DI 容器（入口）
+
+##### `app/di/container.py`
+
+```python
+from inject import Container
+from .bindings import bind_dependencies
+
+# 初始化 DI 容器
+container = Container()
+bind_dependencies(container)
+```
+
+---
+
+#### 🎯 7. 在 API 层使用 DI 注入用例
+
+##### `app/api/v1/routers/upload.py`
+
+```python
+from fastapi import APIRouter, Depends, UploadFile, File
+from app.di.container import container
+from app.application.use_cases.upload_resume_use_case import UploadResumeUseCase
+from app.application.dtos.resume_dto import ResumeDTO
+
+router = APIRouter(prefix="/upload", tags=["upload"])
+
+# 通过 DI 注入用例
+def get_upload_use_case() -> UploadResumeUseCase:
+    return container.get(UploadResumeUseCase)
+
+@router.post("/", response_model=ResumeDTO)
+async def upload_resume(
+    file: UploadFile = File(...),
+    use_case: UploadResumeUseCase = Depends(get_upload_use_case)
+):
+    # 调用用例
+    result = use_case.execute(file)
+    return result
+```
+
+---
+
+### 优势总结
+
+| 优势 | 说明 |
+|------|------|
+| **解耦** | 各层通过接口通信，不直接依赖具体实现 |
+| **可测试性** | 可轻松替换依赖（如 mock 数据库） |
+| **可扩展性** | 换数据库、换消息队列只需修改绑定规则 |
+| **维护性** | 依赖关系集中管理，清晰可见 |
+
+---
+
+### 进阶建议
+
+- 使用 `FastAPI` 的 `Depends()` + `@app.on_event("startup")` 自动初始化 DI 容器
+- 配合 `pytest` + `monkeypatch` 做单元测试
+- 后续可引入 **`dependency-injector`** 库（更强大，支持作用域、模块化）
+
 ## DDD的最大特点是什么？
 领域模型准确反映了业务语言，而传统微服务数据对象除了简单setter/getter方法外，没有任何业务方法，即失血模型，那么DDD领域模型就是充血模型（业务方法定义在实体对象中）  
 参考链接：[https://www.cnblogs.com/dennyzhangdd/p/14376904.html](https://www.cnblogs.com/dennyzhangdd/p/14376904.html)
