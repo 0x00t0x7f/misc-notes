@@ -915,12 +915,13 @@ async def upload_resume(
 ```
 
 **Use Case vs DDD其他概念**  
-概念	位置	职责	与 Use Case 的关系
-Entity（实体）	领域层	表示核心业务对象（如 Resume）	被 Use Case 操作
-Value Object（值对象）	领域层	不可变的数据对象（如 Email, Address）	作为参数传给 Use Case
-Service（服务）	领域层	处理跨实体的业务逻辑（如 ResumeParserService）	被 Use Case 调用
-Repository（仓库）	领域层	封装数据访问逻辑	被 Use Case 调用
-Use Case（用例）	应用层	协调领域对象完成完整业务流程	是整个业务流程的“导演”
+|概念|位置|职责|与 Use Case 的关系|
+|---|---|---|---|
+|Entity（实体）|领域层|表示核心业务对象（如 Resume）|被 Use Case 操作|
+|Value Object（值对象）|领域层|不可变的数据对象（如 Email, Address）|作为参数传给 Use Case|
+|Service（服务）|领域层|处理跨实体的业务逻辑（如 ResumeParserService）|被 Use Case 调用|
+|Repository（仓库）|领域层|封装数据访问逻辑|被 Use Case 调用|
+|Use Case（用例）|应用层|协调领域对象完成完整业务流程|是整个业务流程的“导演”|
 
 **use case总结**  
 > Use Case 是应用层的“业务指挥官”——它不负责具体的业务逻辑，但负责调度领域对象，让它们协同完成一个完整的业务任务。
