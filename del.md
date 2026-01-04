@@ -303,7 +303,9 @@ flowchart TD
 ---
 
 # Redis key命名规范
+请查看该文章[《Redis Key命名规范实战指南》](https://blog.csdn.net/qq_18529581/article/details/156567940)
 
+---
 
 # Redis安全读取技巧
 ## 缓存穿透
