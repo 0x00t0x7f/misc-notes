@@ -279,3 +279,82 @@ sequenceDiagram
     C ->> A: 结果是xxx
 
 ```
+
+# Claude Code
+使得 AI辅助编程，从辅助变成了真正的生产力工具
+
+## 大模型和Context、私域知识的三角关系
+
+```mermaid
+
+graph TD
+
+A[LLM]
+A1[模型理解能力]
+A2[上下文长度]
+A3[私域知识储备]
+
+A --> A1 & A2 & A3
+```
+
+> 三个顶点构成一个“不可能三角”， 很难同时把三者做到最大化
++ 如果喂太多私域知识 -> 占满上下文 -> 理解力下降
++ 强理解能力 -> 干净、聚焦的上下文 -> 不能塞太多私域知识给模型
++ 处理大型项目 -> 必须要有长上下文 + 大量私域知识 -> 牺牲推理质量
+
+## 推荐插件
++ Super Claude：打包了一系列编码、需求分析、设计助手以及常用的MCP工具到Claude Code内； 还有一部分可选装，如 playwright, claude mcp add playwright -- npx @playwright/mcp@latest
+
+## 使用技巧
++ 设置别名实现使用免授权模式： claude --dangerously-skip-permissions
++ 用魔法打败魔法（使用工具生成细致提示词，进而生成代码）
+  - 使用 Super Claude分析需求
+  - 使用子Agent进行具体开发
+  - 使用Skills封装专业知识
+
+
+```mermaid
+
+graph TD
+    A[Claude 主代理<br>理解任务、编排流程、调度 Subagents<br>调用 Skills 作为 “标准操作手册”]
+    B["Data Analyst<br>(数据分析subagent)"]
+    C["Report Writer<br>(报告撰写subagent)"]
+    D["Vision Designer<br>(视觉设计subagent)"]
+    E["Communicator<br>(对外沟通subagent)"]
+
+    A0[任务分解/调度]
+
+    A --> A0 --> B & C & D & E
+
+    B -->|使用skills| F["Skill: Excel 数据分析<br>(定义流程、模板、规则)"]
+    C -->|使用skills| G["Skill: 报告模板生成<br>(定义 SOP / 模板)"]
+    D -->|使用skills| H["Skill: PPT 视觉生成<br>(定义PPT版式 SOP)"]
+    E -->|使用skills| I["Skill: 邮件撰写流程<br>(定义沟通 SOP)"]
+
+    F -->|调用mcp访问外部数据| J["CRM MCP Server<br>(客户数据库)"]
+    G -->|调用mcp访问模板| K["Drive MCP Server<br>(公司文件系统)"]
+    H -->|调用mcp取图形素材| L["Assets MCP Server<br>(设计素材库)"]
+    I -->|调用mcp获取联系人| M["Mail MCP Server<br>(邮件系统)"]
+
+    J --> N["所有外部系统与工具<br>(真实数据来源 + 业务操作接口)"]
+    K --> N
+    L --> N
+    M --> N
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bbf,stroke:#333,stroke-width:2px
+    style D fill:#bbf,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px
+    style N fill:#f9f,stroke:#333,stroke-width:2px
+
+    classDef subagent fill:#e6f3ff,stroke:#0066cc,stroke-width:2px
+    classDef skill fill:#e6ffe6,stroke:#009900,stroke-width:2px
+    classDef mcpServer fill:#ffe6e6,stroke:#cc0000,stroke-width:2px
+    classDef external fill:#f0f0f0,stroke:#666,stroke-width:2px
+
+    class B,C,D,E subagent
+    class F,G,H,I skill
+    class J,K,L,M mcpServer
+    class N external
+```
