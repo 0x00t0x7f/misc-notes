@@ -253,3 +253,29 @@ MCP就是AI大模型的工具协议，一个USB转换器，一个RESTful协议
 **MCP和A2A关系（协作关系）**  
 + MCP负责以AI大模型为和兴，链接Agent和Tools
 + A2A负责以Agent为核心，支持多个Agent之间互相调用拉起
+
+## 理解MCP-Agent工具调用
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 用户（User）
+    participant B as Tools（MCP Server）
+    participant C as AI Agent
+    participant D as Model
+
+    C -->> B: 启动MCP Server
+    C -->> B: 你好我是xx（agent）
+    B -->> C: 你好我是xx（mcp server）
+    C -->> B: 你都有啥工具
+    B -->> C: 我有这些工具，分别是..
+
+    A ->> C: 今天天气如何？
+    C ->> D: 今天天气如何，我这有一堆工具、函数，分别是..，看能否帮到你..
+    D ->> C: 我要调用 getWeather(city, today), 参数是 北京、2026-01-01..
+    C ->> B: 我要调用 getWeather("北京", "2026-01-01")
+    B ->> C: 调用完毕，结果是 xxx
+    C ->> D: 调用结束，结果是 xxx
+    D ->> C: 分析、汇总结果中， waiting.. 结果是这样的
+    C ->> A: 结果是xxx
+
+```
