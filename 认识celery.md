@@ -150,6 +150,60 @@ async def process_voice(audio_path: str, user_id: int):
 
 ---
 
+## 附：Celery消息路由协同图解
+```mermaid
+graph TD
+    A["Task Sender<br>(e.g., Flask/FastAPI)"] -->|"send_task()"| B["Exchange(接收消息)<br>(e.g., 'audio_exchange')<br>type: direct/topic"]
+    B -->|Exchange根据routing_key: audio.process路由| C["Queue<br>(e.g., 'audio_tasks')<br>bound to Exchange"]
+    C --> |监听+消费|D["Worker Node 1<br>(Consumes from queue)"]
+    C --> |监听+消费|E["Worker Node 2<br>(Consumes from queue)"]
+    D -->|execute task| F["Result Backend<br>(e.g., Redis, DB)"]
+    E -->|execute task| F
+
+    %% === 样式定义 ===
+    style A fill:#f9f,stroke:#333,stroke-width:1px
+    style B fill:#bbf,stroke:#333,stroke-width:1px
+    style C fill:#cfc,stroke:#333,stroke-width:1px
+    style D fill:#cfc,stroke:#333,stroke-width:1px
+    style E fill:#cfc,stroke:#333,stroke-width:1px
+    style F fill:#f96,stroke:#333,stroke-width:1px
+
+    classDef sender fill:#f9f,stroke:#333,stroke-width:1px;
+    classDef exchange fill:#bbf,stroke:#333,stroke-width:1px;
+    classDef queue fill:#cfc,stroke:#333,stroke-width:1px;
+    classDef worker fill:#cfc,stroke:#333,stroke-width:1px;
+    classDef result fill:#f96,stroke:#333,stroke-width:1px;
+
+    class A sender
+    class B exchange
+    class C queue
+    class D worker
+    class E worker
+    class F result
+
+    %% === 注释说明 ===
+    subgraph "核心路由机制"
+        B
+        C
+        D
+        E
+        style B fill:#eef,stroke:#666,stroke-width:1px
+        style C fill:#eef,stroke:#666,stroke-width:1px
+        style D fill:#eef,stroke:#666,stroke-width:1px
+        style E fill:#eef,stroke:#666,stroke-width:1px
+    end
+```
+
+**🔑 关键点总结**
+|组件	|职责|	与 routing_key 的关系|
+|---|---|---|
+|Exchange	|消息的“分发中心”	|根据 routing_key 决定消息去向|
+|routing_key|	消息的“路由标签”	|与 Exchange 类型配合使用（direct/topic）|
+|Queue	|消息的“等待区”	|被 Exchange 通过 routing_key 填充|
+
+
+---
+
 ## 📌 总结
 
 > ✅ **Celery = 分布式任务队列 + 异步执行 + 定时调度 + 任务编排**
