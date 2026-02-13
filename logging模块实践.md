@@ -36,6 +36,27 @@
 [ 日志输出：文件 + 控制台 + 可选远程（如 Syslog, Kafka）]
 ```
 
+**执行流程**
+```
+[Logger] 
+   │
+   ▼
+[Message + Context]   ← 日志内容 + 上下文（如 user_id, request_id）
+   │
+   ▼
+[Filter(s)] ←─────────────┐
+   │                           │
+   ▼                           ▼
+[Formatter(s)] ←─────────────┘
+   │
+   ▼
+[Handler(s)] 
+   │
+   ▼
+[Output] → 文件 / 控制台 / HTTP / DB / Kafka 等
+```
+
+
 ---
 
 ## ✅ 三、配置方案（推荐 `dictConfig`）
@@ -136,6 +157,7 @@ def setup_logging():
 
 |组件	|作用	|说明|
 |---|---|---|
+|filters| 过滤器| 决定是否输出、脱敏、加标签、防止日志爆炸（限流）|
 |formatters	|定义日志的输出格式（如时间、级别、消息、上下文等）	|决定日志“长什么样”，支持结构化输出（如JSON）|
 |handlers	|定义日志的输出目的地和方式（如文件、控制台、网络等）|	决定日志“去哪儿”，可绑定多个 formatters 和 level|
 |loggers	|日志的逻辑入口，用于生成日志记录，控制日志是否被处理|	每个模块/类可以有自己的 logger，是日志体系的“源头”|
@@ -143,6 +165,7 @@ def setup_logging():
 > ✅ 关系链：
 logger → 产生日志 → 根据 level 决定是否传递给 handlers
 handler → 使用 formatter 格式化日志 → 写入目标（文件/控制台等）
+> 一句话总结：日志从 logger 出发，经过 filter 逐条判断是否该处理，再由 formatter 格式化内容，最后交给 handler 输出到目标位置
 
 
 ### 日志是如何被处理的？（日志决策树）
@@ -375,6 +398,59 @@ e2e_logger.info("这是一个 e2e 日志，应该被 e2e 和 root 都打印出�
 |3️⃣ propagate = True（默认）|	让日志能传给 root|
 |4️⃣ 只在启动时配置一次|	防止重复 handler|
 |5️⃣ 日志格式统一	|便于搜索、分析、CI/CD 日志处理|
+
+## 附录4：filter的配置示例
+```python
+import logging
+from contextvars import ContextVar
+
+# 全局上下文变量
+_request_context = ContextVar("request_context", default={})
+
+class SensitiveFilter(logging.Filter):
+    def filter(self, record):
+        # 1. 从上下文中获取请求信息
+        ctx = _request_context.get({})
+        record.user_id = ctx.get("user_id", "N/A")
+        record.client_ip = ctx.get("client_ip", "N/A")
+        record.request_id = ctx.get("request_id", "N/A")
+        record.endpoint = ctx.get("endpoint", "unknown")
+
+        # 2. 脱敏：只对 message 和 exc_info 脱敏
+        if hasattr(record, "message") and isinstance(record.message, str):
+            record.message = self.mask_sensitive(record.message)
+
+        if hasattr(record, "exc_info") and record.exc_info:
+            exc_str = str(record.exc_info[1])
+            record.exc_info = (record.exc_info[0], self.mask_sensitive(exc_str), record.exc_info[2])
+
+        return True
+
+    def mask_sensitive(self, text: str) -> str:
+        # 示例：替换密码、手机号等
+        patterns = {
+            "password": r'(password|pwd|pass|secret|token|key)[\s:]*["\']?([a-zA-Z0-9_\-+=%]*)["\']?',
+            "phone": r'\b(\+?86)?1[3-9]\d{9}\b',
+        }
+        for pattern in patterns.values():
+            text = re.sub(pattern, r'\1: ***', text, flags=re.IGNORECASE)
+        return text
+
+```
+
+然后在 logging.yaml中注册
+```yaml
+filters:
+  sensitive_filter:
+    (): filters.sensitive_filter.SensitiveFilter
+
+handlers:
+  file:
+    class: logging.FileHandler
+    formatter: structured
+    filters: [sensitive_filter]
+    filename: logs/app.log
+```
 
 **附加建议：用loguru替代logging**
 如果你追求更简洁、更现代的写法，可以考虑使用 loguru：
