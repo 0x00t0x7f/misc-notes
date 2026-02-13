@@ -62,6 +62,24 @@ graph TD
     class F result
 ```
 
+**工作流程图**
+```mermaid
+sequenceDiagram
+    participant Client as Client App
+    participant Broker as Broker (Redis/RabbitMQ)
+    participant Worker as Worker Process
+    participant Backend as Result Backend
+
+    Client->>Broker: send_task('add', args=[2,3])
+    Broker->>Worker: deliver task to idle worker
+    Worker->>Worker: execute task: add(2,3)
+    Worker->>Backend: store result: 5
+    Backend-->>Worker: confirm saved
+    Worker-->>Client: return result (if requested)
+    Client-->>Client: receive result: 5
+
+```
+
 
 ## 🌟 四、Celery 的高级功能
 
@@ -75,7 +93,7 @@ graph TD
 | ✅ **任务签名（Task Signature）** | 用于构建任务对象，支持序列化和远程调用 |
 | ✅ **任务状态监控** | 通过 `task.delay()` 返回的 `AsyncResult` 查询任务状态 |
 | ✅ **消息确认（Acknowledgement）** | Worker 只有在任务成功执行后才从 Broker 中删除任务 |
-| ✅ **任务优先级** | 支持设置任务优先级（高/中/低），用于资源调度 |
+| ✅ **任务路由与优先级** | 可将任务路由到特定worker，或支持设置任务优先级（高/中/低），用于资源调度 |
 
 ---
 
@@ -84,11 +102,14 @@ graph TD
 | 场景 | 说明 |
 |------|------|
 | 🎙️ **语音识别任务** | 主应用调用语音服务，Celery 异步处理音频转文字任务 |
-| 📧 **邮件发送（异步）** | 用户注册后，不阻塞主流程，Celery 后台发送验证邮件 |
+|**图片/视频处理**|如缩略图生成、格式转换、人脸识别|
+| 📧 **邮件/短信发送（异步）** | 用户注册后，不阻塞主流程，Celery 后台发送验证邮件 |
 | 📊 **报表生成（耗时任务）** | 每月生成销售报表，Celery 异步处理，不卡主服务 |
 | 🔁 **定时数据同步** | 每小时从外部 API 同步商品价格（Celery Beat） |
+|**定时任务调度**|如每日生成报表、定时备份数据库、清理缓存|
 | 📦 **文件处理流水线** | 用户上传视频 → Celery 转码 → 保存 → 发送通知 |
 | 🧠 **AI 模型推理** | 接收用户请求 → Celery 异步运行大模型推理 → 返回结果 |
+|**大数据批量计算**| 如日志分析、报表生成、数据清洗|
 
 ---
 
@@ -96,13 +117,14 @@ graph TD
 
 | 特性 | 说明 |
 |------|------|
-| 🌐 **分布式支持** | 多个 Worker 可分布在不同服务器 |
+| 🌐 **分布式支持** | 多个 Worker 可分布在不同服务器部署，实现弹性伸缩 |
 | ⏱️ **异步执行** | 主流程不阻塞，提升响应速度 |
 | 🔁 **失败重试机制** | 支持自动重试 + 退避策略 |
 | 🕰️ **定时任务调度** | 通过 Celery Beat 实现 Cron 风格调度 |
-| 📦 **任务组合能力** | 支持 Chains、Groups、Chords 等复杂任务编排 |
-| 📊 **结果追踪与监控** | 可查询任务状态、结果、执行时间等 |
+| 📦 **任务组合编排能力** | 支持 Chains、Groups、Chords 等复杂任务编排，chord：先并行执行一组任务，再执行回调<br>- chain：任务串行执行<br>- group：并行执行多个任务 |
+| 📊 **结果追踪与监控** | 可查询任务状态、结果、执行时间等，使用 Flower 提供 Web UI，实时监控任务状态、Worker、队列、延迟等|
 | 🛡️ **安全机制** | 可结合 JWT、API Key、IP 白名单等增强安全性 |
+|**多种消息协议**|支持 Redis, RabbitMQ, Amazon SQS 等|
 
 ---
 
@@ -116,6 +138,15 @@ graph TD
 6. **限制任务执行时间**（使用 `soft_time_limit` / `time_limit`）。
 
 ---
+
+## ✅ 八、常见问题与最佳实践
+|问题	|解决方案|
+|---|---|
+|任务堆积	|增加 Worker 数量或优化任务逻辑|
+|任务丢失	|使用持久化 Broker（如 Redis 持久化、RabbitMQ）|
+|结果存储慢|使用 Redis 作为 Result Backend，避免数据库瓶颈|
+|任务超时	|设置 timeout 和 soft_time_limit 参数|
+|不支持跨进程|所有任务函数必须可被序列化（避免使用 lambda、闭包）|
 
 ## 📦 附：Celery 任务示例（Python）
 
