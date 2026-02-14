@@ -153,7 +153,7 @@ def setup_logging():
 
 > 💡建议：子 logger 尽量不自己加 handler，而是通过配置继承父 logger 的 handler
 
-### formaters、handlers、loggers 区别
+### filters、formaters、handlers、loggers 区别
 
 |组件	|作用	|说明|
 |---|---|---|
@@ -393,9 +393,9 @@ e2e_logger.info("这是一个 e2e 日志，应该被 e2e 和 root 都打印出�
 ## 附录3：项目级日志配置黄金法则
 |法则|说明|
 |---|---|
-|1️⃣ 一个 root logger	|项目只配置一次，统一管理|
+|1️⃣ 一个 root logger	|项目只配置一次，统一管理，若有handlers，则会接收所有传播过来的日志|
 |2️⃣ 模块用子 logger	|logging.getLogger("app.module")|
-|3️⃣ propagate = True（默认）|	让日志能传给 root|
+|3️⃣ propagate = True（默认）|	让日志可以向上传播，甚至能传给 root|
 |4️⃣ 只在启动时配置一次|	防止重复 handler|
 |5️⃣ 日志格式统一	|便于搜索、分析、CI/CD 日志处理|
 
