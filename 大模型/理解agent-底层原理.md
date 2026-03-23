@@ -42,7 +42,7 @@ client = OpenAI(
 ```
 可以看到，使用了openai的python SDK，通过base_url环境变量，可以指向任何一个兼容openai api格式的服务，agent框架不应该绑定具体模型。 api_key则是对应服务的访问密钥。
 
-## 工具定义：告诉LLM有哪些能力
+## 工具定义：告诉LLM它有哪些能力
 ```python
 tools = [
     {
@@ -81,7 +81,7 @@ def write_file(path, content):
         f.write(content)
     return f"Wrote to {path}"
 
-
+# 把工具名映射到实际函数，方便 Agent根据LLM的指令找到相应的工具并调用
 functions = {"execute_bash": execute_bash, "read_file": read_file, "write_file": write_file}
 ```
 
@@ -133,18 +133,20 @@ sequenceDiagram
     participant D as LLM
 
     A -->> B: 统计当前目录下的python文件，并将统计结果写入 result.txt
-    B -->> D: 发送给LLM组装好的prompt
-    D -->> B: 我需要调用 execute_bash function，这是调用这个工具的信息：function name、arguments..
-    B -->> C: 执行函数，得到结果: 5
-    B -->> D: 将tool的结果追加到 messages context中，组成新的prompt，（system + user + assistant的tool_call+tool结果）
-    D -->> B: LLM 调用 write_file function 写入文件，将指令发送给 Agent
-    B -->> C: call write_file("result.txt", "5")
-    B -->> D: Wrote to result.txt
+    B -->> D: 发送给LLM组装好的prompt以及tools
+    D -->> B: 我需要调用 execute_bash function函数，参数信息：arguments..
+    B -->> C: 本地调用函数 execute_bash
+    C -->> B: 函数execute_bash执行，得到结果: 5
+    B -->> D: 将结果追加到 messages context中，组成新的prompt，（system + user + role + ..），发送给LLM
+    D -->> B: LLM看到结果5，决定调用 write_file function 写入文件，并将该指令发送给了Agent
+    B -->> C: Agent call write_file("result.txt", "5")
+    C -->> B: 函数 write_file执行，得到结果：Wrote to result.txt
+    B -->> D: 将结果追加到 messages，组成新的prompt发送给LLM
     D -->> B:LLM看到文件写入成功，判断任务已完成，返回最终响应
-    B -->> A: response
+    B -->> A: response：已完成统计，当前目录下共有5个python文件，结果已写入result.txt
 ```
 
-也可用一张图来表示：
+也可用一张流程图来表示：
 ```
     用户任务
       │
