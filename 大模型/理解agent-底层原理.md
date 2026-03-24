@@ -326,7 +326,9 @@ def create_plan(task):
 
 ```mermaid
 
+---
 title: agent-plus
+---
 
 graph LR
 
@@ -335,7 +337,7 @@ B[2.行动]
 C[3.观察]
 
 %% agent
-subgraph agent
+subgraph 初代agent
     A --> B --> C --> A
 end
 
@@ -344,6 +346,63 @@ STEP1[step1]
 STEP2[step2]
 STEP3[step3]
 
-PLAN -- STEP1 --> STEP2 --> STEP3
-STEP1 --.-- agent
+PLAN --> |每个step中仍然是初代agent的工作方式|STEP1 --> STEP2 --> STEP3
 ```
+
+## 多步执行：步骤之间上下文传递
+```python
+def run_agent_step(task, messages, max_iterations=5):
+    messages.append({"role": "user", "content": task})
+    actions = []
+    for _ in range(max_iterations):
+        response = client.chat.completions.create(
+            model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=messages,
+            tools=tools
+        )
+        message = response.choices[0].message
+        messages.append(message)
+        if not message.tool_calls:
+            return message.content, actions, messages
+        for tool_call in message.tool_calls:
+            function_payload = getattr(tool_call, "function", None)
+            if function_payload is None:
+                continue
+            function_name = str(getattr(function_payload, "name", ""))
+            raw_arguments = str(getattr(function_payload, "arguments", ""))
+            function_args = parse_tool_arguments(raw_arguments)
+            print(f"[Tool] {function_name}({function_args})")
+            function_impl = available_functions.get(function_name)
+            if function_impl is None:
+                function_response = f"Error: Unknown tool '{function_name}'"
+            elif "_argument_error" in function_args:
+                function_response = f"Error: {function_args['_argument_error']}"
+            else:
+                function_response = function_impl(**function_args)
+                actions.append({"tool": function_name, "args": function_args})
+            messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": function_response})
+    return "Max iterations reached", actions, messages
+```
+
++ 变化1：messages从内部创建变为外部传入，这样多个步骤间就可以共享同一个对话历史。
++ 变化2：返回值中包含messages；函数把更新后的消息列表返回给调用方供下一步使用
+
+**编排： 把步骤串联起来**  
+```python
+all_results = []
+for i, step in enumerate(steps, 1):
+    if len(steps) > 1:
+        print(f"\n[Step {i}/{len(steps)}] {step}")
+    result, actions, messages = run_agent_step(step, messages)
+    all_results.append(result)
+    print(f"\n{result}")
+final_result = "\n".join(all_results)
+save_memory(task, final_result)
+```
+可以看到，前一个步骤的输出作为下一个步骤的输入，每个步骤只完成一件事最后输出最终结果。
+
+其中每个步骤内的 messages是短期记忆列表，而 agent_memory.md保存了长期记忆。
+|记忆类型|载体|生命周期|实现|
+|---|---|---|---|
+|短期记忆|messages列表|单次运行内|步骤之间共享的对话历史|
+|长期记忆|agent_memory.md|跨任务|save_memory函数|
