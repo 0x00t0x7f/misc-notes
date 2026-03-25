@@ -485,7 +485,7 @@ def read(path, offset=None, limit=None):
 
 该版本升级了read函数，这个版本支持offset和limit分页读取，并且每行加上了行号，行号可以让LLM更靳准的定位。
 
-## Rules：给agent立人设、规矩
+## Rules：给agent立人设、立规矩
 
 Rules放在 .agent/rules/目录下，agent启动初始化时加载并注入到 system prompt中。
 
