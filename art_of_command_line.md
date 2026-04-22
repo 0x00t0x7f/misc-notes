@@ -30,5 +30,202 @@
 + 把环境变量的设定以及登陆时要执行的命令保存在 ~/.bash_profile。而对于从图形界面启动的 shell 和 cron 启动的 shell，则需要单独配置文件。
 + 要想在几台电脑中同步你的配置文件（例如 .bashrc 和 .bash_profile），可以借助 Git。
 + 通过使用 <(some command) 可以将输出视为文件。例如，对比本地文件 /etc/hosts 和一个远程文件：
-+ 
-  
++ 使用 man ascii 查看具有十六进制和十进制值的ASCII表。man unicode，man utf-8，以及 man latin1 有助于你去了解通用的编码信息。
++ 使用 screen 或 tmux 来使用多份屏幕，当在使用 ssh 时（保存 session 信息）将尤为有用。而 byobu 可以为它们提供更多的信息和易用的管理工具。另一个轻量级的 session 持久化解决方案是 dtach。
++ ssh 中，了解如何使用 -L 或 -D（偶尔需要用 -R）开启隧道是非常有用的，比如当你需要从一台远程服务器上访问 web 页面。
++ 对 ssh 设置做一些小优化可能是很有用的，例如这个 ~/.ssh/config 文件包含了防止特定网络环境下连接断开、压缩数据、多通道等选项：
+
+```bash
+      TCPKeepAlive=yes
+      ServerAliveInterval=15
+      ServerAliveCountMax=6
+      Compression=yes
+      ControlMaster auto
+      ControlPath /tmp/%r@%h:%p
+      ControlPersist yes
+```
++ 一些其他的关于 ssh 的选项是与安全相关的，应当小心翼翼的使用。例如你应当只能在可信任的网络中启用 StrictHostKeyChecking=no，ForwardAgent=yes。
++ 考虑使用 mosh 作为 ssh 的替代品，它使用 UDP 协议。它可以避免连接被中断并且对带宽需求更小，但它需要在服务端做相应的配置。
++ 使用 percol 或者 fzf 可以交互式地从另一个命令输出中选取值。
++ 使用 fpp（PathPicker）可以与基于另一个命令(例如 git）输出的文件交互。
++ 将 web 服务器上当前目录下所有的文件（以及子目录）暴露给你所处网络的所有用户，使用：
+python -m SimpleHTTPServer 7777 （使用端口 7777 和 Python 2）或python -m http.server 7777 （使用端口 7777 和 Python 3）。
++ 以其他用户的身份执行命令，使用 sudo。默认以 root 用户的身份执行；使用 -u 来指定其他用户。使用 -i 来以该用户登录（需要输入_你自己的_密码）。
++ 将 shell 切换为其他用户，使用 su username 或者 su - username。加入 - 会使得切换后的环境与使用该用户登录后的环境相同。省略用户名则默认为 root。切换到哪个用户，就需要输入_哪个用户的_密码。
++ 了解命令行的 128K 限制。使用通配符匹配大量文件名时，常会遇到“Argument list too long”的错误信息。（这种情况下换用 find 或 xargs 通常可以解决。）
+
+## 文件及数据处理
++ 在当前目录下通过文件名查找一个文件，使用类似于这样的命令：find . -iname '*something*'。在所有路径下通过文件名查找文件，使用 locate something （但注意到 updatedb 可能没有对最近新建的文件建立索引，所以你可能无法定位到这些未被索引的文件）。
++ 使用 ag 在源代码或数据文件里检索（grep -r 同样可以做到，但相比之下 ag 更加先进）。
++ 将 HTML 转为文本：lynx -dump -stdin。
++ Markdown，HTML，以及所有文档格式之间的转换，试试 pandoc。
++ 当你要处理棘手的 XML 时候，xmlstarlet 算是上古时代流传下来的神器。
++ 使用 jq 处理 JSON。
++ 使用 shyaml 处理 YAML。
++ 要处理 Excel 或 CSV 文件的话，csvkit 提供了 in2csv，csvcut，csvjoin，csvgrep 等方便易用的工具。
++ 当你要处理 Amazon S3 相关的工作的时候，s3cmd 是一个很方便的工具而 s4cmd 的效率更高。Amazon 官方提供的 aws 以及 saws 是其他 AWS 相关工作的基础，值得学习。
++ 了解如何使用 sort 和 uniq，包括 uniq 的 -u 参数和 -d 参数，具体内容在后文单行脚本节中。另外可以了解一下 comm。
++ 了解如何使用 cut，paste 和 join 来更改文件。很多人都会使用 cut，但遗忘了 join。
++ 了解如何运用 wc 去计算新行数（-l），字符数（-m），单词数（-w）以及字节数（-c）。
++ 了解如何使用 tee 将标准输入复制到文件甚至标准输出，例如 ls -al | tee file.txt。
++ 要进行一些复杂的计算，比如分组、逆序和一些其他的统计分析，可以考虑使用 datamash。
++ 注意到语言设置（中文或英文等）对许多命令行工具有一些微妙的影响，比如排序的顺序和性能。大多数 Linux 的安装过程会将 LANG 或其他有关的变量设置为符合本地的设置。要意识到当你改变语言设置时，排序的结果可能会改变。明白国际化可能会使 sort 或其他命令运行效率下降许多倍。某些情况下（例如集合运算）你可以放心的使用 export LC_ALL=C 来忽略掉国际化并按照字节来判断顺序。
++ 你可以单独指定某一条命令的环境，只需在调用时把环境变量设定放在命令的前面，例如 TZ=Pacific/Fiji date 可以获取斐济的时间。
++ 了解如何使用 awk 和 sed 来进行简单的数据处理。
++ 使用 repren 来批量重命名文件，或是在多个文件中搜索替换内容。（有些时候 rename 命令也可以批量重命名，但要注意，它在不同 Linux 发行版中的功能并不完全一样。）
++ 根据 man 页面的描述，rsync 是一个快速且非常灵活的文件复制工具。它闻名于设备之间的文件同步，但其实它在本地情况下也同样有用。在安全设置允许下，用 rsync 代替 scp 可以实现文件续传，而不用重新从头开始。它同时也是删除大量文件的最快方法之一：
++ 若要在复制文件时获取当前进度，可使用 pv，pycp，progress，rsync --progress。若所执行的复制为block块拷贝，可以使用 dd status=progress。
++ 使用 shuf 可以以行为单位来打乱文件的内容或从一个文件中随机选取多行。
++ 了解 sort 的参数。显示数字时，使用 -n 或者 -h 来显示更易读的数（例如 du -h 的输出）。明白排序时关键字的工作原理（-t 和 -k）。例如，注意到你需要 -k1，1 来仅按第一个域来排序，而 -k1 意味着按整行排序。稳定排序（sort -s）在某些情况下很有用。例如，以第二个域为主关键字，第一个域为次关键字进行排序，你可以使用 sort -k1，1 | sort -s -k2，2。
++ 如果你想在 Bash 命令行中写 tab 制表符，按下 ctrl-v [Tab] 或键入 $'\t' （后者可能更好，因为你可以复制粘贴它）。
++ 标准的源代码对比及合并工具是 diff 和 patch。使用 diffstat 查看变更总览数据。注意到 diff -r 对整个文件夹有效。使用 diff -r tree1 tree2 | diffstat 查看变更的统计数据。vimdiff 用于比对并编辑文件。
++ 对于二进制文件，使用 hd，hexdump 或者 xxd 使其以十六进制显示，使用 bvi，hexedit 或者 biew 来进行二进制编辑。
++ 同样对于二进制文件，strings（包括 grep 等工具）可以帮助在二进制文件中查找特定比特。
++ 制作二进制差分文件（Delta 压缩），使用 xdelta3。
++ 拆分文件可以使用 split（按大小拆分）和 csplit（按模式拆分）。
++ 操作日期和时间表达式，可以用 dateutils 中的 dateadd、datediff、strptime 等工具。
++ 使用 zless、zmore、zcat 和 zgrep 对压缩过的文件进行操作。
++ 文件属性可以通过 chattr 进行设置，它比文件权限更加底层。例如，为了保护文件不被意外删除，可以使用不可修改标记：sudo chattr +i /critical/directory/or/file
++ 使用 getfacl 和 setfacl 以保存和恢复文件权限。
++ 为了高效地创建空文件，请使用 truncate（创建稀疏文件），fallocate（用于 ext4，xfs，btrf 和 ocfs2 文件系统），xfs_mkfile（适用于几乎所有的文件系统，包含在 xfsprogs 包中），mkfile（用于类 Unix 操作系统，比如 Solaris 和 Mac OS）。
+
+## 系统调试
++ curl 和 curl -I 可以被轻松地应用于 web 调试中，它们的好兄弟 wget 也是如此，或者也可以试试更潮的 httpie。
++ 获取 CPU 和硬盘的使用状态，通常使用使用 top（htop 更佳），iostat 和 iotop。而 iostat -mxz 15 可以让你获悉 CPU 和每个硬盘分区的基本信息和性能表现。
++ 使用 netstat 和 ss 查看网络连接的细节。
++ dstat 在你想要对系统的现状有一个粗略的认识时是非常有用的。然而若要对系统有一个深度的总体认识，使用 glances，它会在一个终端窗口中向你提供一些系统级的数据。
++ 若要了解内存状态，运行并理解 free 和 vmstat 的输出。值得留意的是“cached”的值，它指的是 Linux 内核用来作为文件缓存的内存大小，而与空闲内存无关。
++ Java 系统调试则是一件截然不同的事，一个可以用于 Oracle 的 JVM 或其他 JVM 上的调试的技巧是你可以运行 kill -3 <pid> 同时一个完整的栈轨迹和堆概述（包括 GC 的细节）会被保存到标准错误或是日志文件。JDK 中的 jps，jstat，jstack，jmap 很有用。SJK tools 更高级。
++ 使用 mtr 去跟踪路由，用于确定网络问题。
++ 用 ncdu 来查看磁盘使用情况，它比寻常的命令，如 du -sh *，更节省时间。
++ 查找正在使用带宽的套接字连接或进程，使用 iftop 或 nethogs。
++ ab 工具（Apache 中自带）可以简单粗暴地检查 web 服务器的性能。对于更复杂的负载测试，使用 siege。
++ wireshark，tshark 和 ngrep 可用于复杂的网络调试。
++ 了解 strace 和 ltrace。这俩工具在你的程序运行失败、挂起甚至崩溃，而你却不知道为什么或你想对性能有个总体的认识的时候是非常有用的。注意 profile 参数（-c）和附加到一个运行的进程参数 （-p）。
++ 了解使用 ldd 来检查共享库。但是永远不要在不信任的文件上运行。
++ 了解如何运用 gdb 连接到一个运行着的进程并获取它的堆栈轨迹。
++ 学会使用 /proc。它在调试正在出现的问题的时候有时会效果惊人。比如：/proc/cpuinfo，/proc/meminfo，/proc/cmdline，/proc/xxx/cwd，/proc/xxx/exe，/proc/xxx/fd/，/proc/xxx/smaps（这里的 xxx 表示进程的 id 或 pid）。
++ 当调试一些之前出现的问题的时候，sar 非常有用。它展示了 cpu、内存以及网络等的历史数据。
++ 关于更深层次的系统分析以及性能分析，看看 stap（SystemTap），perf，以及sysdig。
++ 查看你当前使用的系统，使用 uname，uname -a（Unix／kernel 信息）或者 lsb_release -a（Linux 发行版信息）。
++ 无论什么东西工作得很欢乐（可能是硬件或驱动问题）时可以试试 dmesg。
++ 如果你删除了一个文件，但通过 du 发现没有释放预期的磁盘空间，请检查文件是否被进程占用：
+lsof | grep deleted | grep "filename-of-my-big-file"      
+
+## 单行脚本
++ 当你需要对文本文件做集合交、并、差运算时，sort 和 uniq 会是你的好帮手。具体例子请参照代码后面的，此处假设 a 与 b 是两内容不同的文件。这种方式效率很高，并且在小文件和上 G 的文件上都能运用（注意尽管在 /tmp 在一个小的根分区上时你可能需要 -T 参数，但是实际上 sort 并不被内存大小约束），参阅前文中关于 LC_ALL 和 sort 的 -u 参数的部分。
+```bash
+      sort a b | uniq > c   # c 是 a 并 b
+      sort a b | uniq -d > c   # c 是 a 交 b
+      sort a b b | uniq -u > c   # c 是 a - b
+```
++ 使用 grep . *（每行都会附上文件名）或者 head -100 *（每个文件有一个标题）来阅读检查目录下所有文件的内容。这在检查一个充满配置文件的目录（如 /sys、/proc、/etc）时特别好用。
++ 计算文本文件第三列中所有数的和（可能比同等作用的 Python 代码快三倍且代码量少三倍）：
+```bash
+      awk '{ x += $3 } END { print x }' myfile
+```  
++ 如果你想在文件树上查看大小/日期，这可能看起来像递归版的 ls -l 但比 ls -lR 更易于理解：
+```bash
+      find . -type f -ls
+```
++ 假设你有一个类似于 web 服务器日志文件的文本文件，并且一个确定的值只会出现在某些行上，假设一个 acct_id 参数在 URI 中。如果你想计算出每个 acct_id 值有多少次请求，使用如下代码：
+```bash
+      egrep -o 'acct_id=[0-9]+' access.log | cut -d= -f2 | sort | uniq -c | sort -rn
+```
++ 要持续监测文件改动，可以使用 watch，例如检查某个文件夹中文件的改变，可以用 watch -d -n 2 'ls -rtlh | tail'；或者在排查 WiFi 设置故障时要监测网络设置的更改，可以用 watch -d -n 2 ifconfig。
++ 运行这个函数从这篇文档中随机获取一条技巧（解析 Markdown 文件并抽取项目）：
+```bash
+      function taocl() {
+        curl -s https://raw.githubusercontent.com/jlevy/the-art-of-command-line/master/README-zh.md|
+          pandoc -f markdown -t html |
+          iconv -f 'utf-8' -t 'unicode' |
+          xmlstarlet fo --html --dropdtd |
+          xmlstarlet sel -t -v "(html/body/ul/li[count(p)>0])[$RANDOM mod last()+1]" |
+          xmlstarlet unesc | fmt -80
+      }
+```
+
+## 冷门命令
+* expr：计算表达式或正则匹配
+* m4：简单的宏处理器
+* yes：多次打印字符串
+* cal：漂亮的日历
+* env：执行一个命令（脚本文件中很有用）
+* printenv：打印环境变量（调试时或在写脚本文件时很有用）
+* look：查找以特定字符串开头的单词或行
+* cut，paste 和 join：数据修改
+* fmt：格式化文本段落
+* pr：将文本格式化成页／列形式
+* fold：包裹文本中的几行
+* column：将文本格式化成多个对齐、定宽的列或表格
+* expand 和 unexpand：制表符与空格之间转换
+* nl：添加行号
+* seq：打印数字
+* bc：计算器
+* factor：分解因数
+* gpg：加密并签名文件
+* toe：terminfo 入口列表
+* nc：网络调试及数据传输
+* socat：套接字代理，与 netcat 类似
+* slurm：网络流量可视化
+* dd：文件或设备间传输数据
+* file：确定文件类型
+* tree：以树的形式显示路径和文件，类似于递归的 ls
+* stat：文件信息
+* time：执行命令，并计算执行时间
+* timeout：在指定时长范围内执行命令，并在规定时间结束后停止进程
+* lockfile：使文件只能通过 rm -f 移除
+* logrotate： 切换、压缩以及发送日志文件
+* watch：重复运行同一个命令，展示结果并／或高亮有更改的部分
+* when-changed：当检测到文件更改时执行指定命令。参阅 inotifywait 和 entr。
+* tac：反向输出文件
+* shuf：文件中随机选取几行
+* comm：一行一行的比较排序过的文件
+* strings：从二进制文件中抽取文本
+* tr：转换字母
+* iconv 或 uconv：文本编码转换
+* split 和 csplit：分割文件
+* sponge：在写入前读取所有输入，在读取文件后再向同一文件写入时比较有用，例如 grep -v something some-file | sponge some-file
+* units：将一种计量单位转换为另一种等效的计量单位（参阅 /usr/share/units/definitions.units）
+* apg：随机生成密码
+* xz：高比例的文件压缩
+* ldd：动态库信息
+* nm：提取 obj 文件中的符号
+* ab 或 wrk：web 服务器性能分析
+* strace：调试系统调用
+* mtr：更好的网络调试跟踪工具
+* cssh：可视化的并发 shell
+* rsync：通过 ssh 或本地文件系统同步文件和文件夹
+* wireshark 和 tshark：抓包和网络调试工具
+* ngrep：网络层的 grep
+* host 和 dig：DNS 查找
+* lsof：列出当前系统打开文件的工具以及查看端口信息
+* dstat：系统状态查看
+* glances：高层次的多子系统总览
+* iostat：硬盘使用状态
+* mpstat： CPU 使用状态
+* vmstat： 内存使用状态
+* htop：top 的加强版
+* last：登入记录
+* w：查看处于登录状态的用户
+* id：用户/组 ID 信息
+* sar：系统历史数据
+* iftop 或 nethogs：套接字及进程的网络利用情况
+* ss：套接字数据
+* dmesg：引导及系统错误信息
+* sysctl： 在内核运行时动态地查看和修改内核的运行参数
+* hdparm：SATA/ATA 磁盘更改及性能分析
+* lsblk：列出块设备信息：以树形展示你的磁盘以及磁盘分区信息
+* lshw，lscpu，lspci，lsusb 和 dmidecode：查看硬件信息，包括 CPU、BIOS、RAID、显卡、USB设备等
+* lsmod 和 modinfo：列出内核模块，并显示其细节
+* fortune，ddate 和 sl：额，这主要取决于你是否认为蒸汽火车和莫名其妙的名人名言是否“有用”
+
+## 更多资源
++ [awesome-shell](https://github.com/alebcay/awesome-shell)：一份精心组织的命令行工具及资源的列表。
++ awesome-osx-command-line：一份针对 OS X 命令行的更深入的指南。
++ [Strict mode](http://redsymbol.net/articles/unofficial-bash-strict-mode/)：为了编写更好的脚本文件。
++ [shellcheck](https://github.com/koalaman/shellcheck)：一个静态 shell 脚本分析工具，本质上是 bash／sh／zsh 的 lint。
++ [Filenames and Pathnames in Shell](http://www.dwheeler.com/essays/filenames-in-shell.html)：有关如何在 shell 脚本里正确处理文件名的细枝末节。
++ [Data Science at the Command Line](http://datascienceatthecommandline.com/#tools)：用于数据科学的一些命令和工具，摘自同名书籍。
+
+出处：https://github.com/jlevy/the-art-of-command-line/blob/master/README.md
