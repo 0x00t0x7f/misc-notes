@@ -3,6 +3,24 @@
 
 + SPEC.md：.codespec/SPEC.md 组件的全量功能规格文件（what & why），回答 系统应该表现出什么业务行为，是业务规则、数据约束、DFX红线的权威定义。
 + DESIGN.md：.codespec/DESIGN.md 组件的全量设计文件（how），回答 用什么技术手段实现spec中定义的业务行为，是架构、数据模型、接口、算法、缓存策略的权威定义。
++ SE：系统工程师，负责需求澄清与业务规格。
++ MDE：模块设计师，负责软件实现元素级设计
+
+**物理形式与目录结构** 
+```
+repo-root
+└── .codespec                        # codespec默认根目录（每个项目唯一）
+    ├── SPEC.md                      # 全量功能规格（what & why，必需）
+    ├── DESIGN.md                    # 全量实现设计（how，必需）
+    ├── changes                      # 增量变更工作区（必需）
+    │   └── AR-ID                    # 每个AR对应一个变更目录
+    │       ├── proposal.md          # 阶段1：需求澄清
+    │       ├── delta-spec.md        # 阶段2：spec增量设计
+    │       ├── delta-design.md      # 阶段3：design增量设计
+    │       └── tasks.md             # 阶段4：任务拆解
+    └── archive                      # 归档区（必需）
+        └── YYYYMMDD-AR-ID           # 完成后归档的变更副本
+```
 
 **SPEC.md编写规范-数据约束编码规范** 
 + 标识符： 订单ID必须全局唯一； 订单ID使用雪花算法生成，存储为BIGINT
@@ -26,6 +44,16 @@ DESIGN.md必须遵循以下一级章节顺序
 |异常处理设计|异常分类、熔断降级|
 |监控与日志|监控指标、日志规范|
 |安全设计|认证、授权、数据保护方案|
+
++ DESIGN.md必须以SPEC.md中定义的业务行为为输入，禁止描述任何Spec中未约束的业务能力。
++ 当DESIGN.md的某项技术决策与SPEC.md中的业务规则冲突时，必须以Spec为准修正Design，禁止反向修改Spec以迁就Design
++ 代码服从Spec，Design也服务Spec，这是规格权威性的体现。
++ DESIGN.md中的每项设计决策应当能够追溯到SPEC.md中的至少一条业务规则或DFX约束。
+
+
+
+
+
 
   
 
